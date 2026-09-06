@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Phase 0 architecture decision**: the encrypted vault is the documented
+  open-source **Cryptomator vault format 8** (SIV_GCM) — see
+  docs/CRYPTOGRAPHY.md for the evaluation and rationale; independent recovery
+  via the Cryptomator applications is documented in docs/RECOVERY.md and in
+  the on-drive public/RECOVERY-INSTRUCTIONS.txt.
+- Vault implementation in `EmergencyArchive.Crypto`: masterkey file
+  (scrypt + AES-KW + versionMac), signed vault configuration (JWT), filename
+  encryption (AES-SIV, NFC, base64url), flattened directory handling, 32 KiB
+  AES-GCM content chunks, long-name shortening (.c9s), and a `VaultStore` /
+  `VaultSession` API (create, unlock, list, read, write). Unit tests include
+  RFC 5297 appendix A.1 conformance vectors, wrong-password, tampering,
+  truncation, unicode, long-name, and multi-chunk round-trip coverage.
 - Development environment: .NET SDK 10.0 pinned via `global.json`, central
   package management with transitive pinning, strict build settings
   (`TreatWarningsAsErrors`, nullable reference types, .NET analyzers).

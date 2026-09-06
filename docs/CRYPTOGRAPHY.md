@@ -1,48 +1,72 @@
-# Cryptography — Vault Format Evaluation (Phase 0)
+# Cryptography — Vault Format Decision (Phase 0)
 
-**Status: DRAFT — decision pending.** Per spec §28 (Phase 0), the vault format
-must be selected and this document finalized **before** Phase 1 production
-code. Custom cryptography is prohibited (spec §2, §5).
+**Status: DECIDED (2026-09-06).** The vault format is the documented,
+open-source **Cryptomator vault format 8** (`SIV_GCM`). No custom cryptography
+is designed anywhere in this project (spec §2, §5); the format's primitives are
+standard (AES-GCM, AES-SIV per RFC 5297, AES Key Wrap per RFC 3394, scrypt per
+RFC 7914, HMAC-SHA-256) and are implemented on top of BouncyCastle and the
+.NET crypto library, conformance-tested against RFC 5297 appendix A.1 vectors.
 
-## Hard requirements (spec §5, §6, §28)
+## Decision rationale
 
-1. Strong modern encryption; password-based key derivation (Argon2id preferred).
-2. Authenticated encryption / integrity protection where supported.
-3. Protects contents; filenames and directory structure where practical.
-4. Memory-hard KDF resistance to offline password guessing.
-5. Single-password UX; programmatic unlock from our application.
-6. Runs portably on Windows and Linux with no/low installation burden.
-7. **Independent recovery**: unlockable years from now with maintained
-   open-source software, following `RECOVERY-INSTRUCTIONS.txt`.
-8. No plaintext keys or passwords written to the USB.
+The vault format must satisfy (spec §5, §6, §28): single-password UX,
+filename + directory-structure protection, memory-hard KDF, portable
+execution with no/low installation, programmatic (non-mounting) unlock on
+possibly untrusted computers, and independent recovery with maintained
+open-source software.
 
-## Candidates
-
-| Criterion | Cryptomator vault | VeraCrypt container | age-based archive |
+| Criterion | **Cryptomator format 8 (chosen)** | VeraCrypt container | age-based scheme |
 |---|---|---|---|
-| Model | Per-file encrypted vault (virtual drive or direct structure) | Single encrypted block container | File-based encryption tool |
-| Filename/dir protection | Yes (name encryption is part of the format) | Yes (everything inside one container) | No — names visible unless individually wrapped; would need our own scheme |
-| Single password UX | Yes | Yes | Yes (symmetric passphrase) |
-| Programmatic unlock | Documented format + libraries; possible without mounting | Requires driver/mount, admin rights on host | Trivial (CLI/library) |
-| Portable, no install | Good — format is documented; app integration possible | Mounting needs kernel driver/admin on the emergency host — poor fit for untrusted computers | Excellent — static CLI/libraries |
-| Independent recovery | Mature third-party apps (Cryptomator, Cyberduck…) | Mature third-party (VeraCrypt itself) | Mature (age + GUIs) |
-| KDF | Argon2id available in vault format | PBKDF2/whirlpool variants; memory-hardness weaker | scrypt (memory-hard) |
-| Integrity/authenticity | Header + per-file AEAD | Container-level | Age encrypt (v1) lacks key-commitment…
+| Filename/dir-structure protection | Yes — AES-SIV name encryption, flattened hashed directories | Yes (all inside one container) | No — names visible; hiding them would require a custom scheme |
+| Single password UX | Yes | Yes | Yes |
+| Programmatic unlock without mounting/admin | Yes — documented format, read directly in-process | No — requires kernel driver + admin on the host | Yes |
+| Memory-hard KDF | scrypt (parameters stored per vault; we raise them above defaults) | PBKDF2 only (not memory-hard) | scrypt |
+| Integrity protection | Per-chunk AES-GCM + SIV authentication + signed vault config (JWT) + versionMac downgrade protection | Container-level | Header MAC |
+| Independent recovery | Cryptomator apps (GPLv3, mature, Windows/Linux/macOS/Android/iOS) + documented manual procedure | VeraCrypt itself | age itself |
+| Incremental updates of a 20–24 GB archive | Per-file encryption — only changed files are re-written | Whole-container rewrite for structural change | Per-file, but no name protection |
 
-## Open questions before deciding
+**Why not the alternatives:** VeraCrypt fails the hostile-computer requirement
+(mounting needs admin/driver, spec §23) and lacks a memory-hard KDF. age has
+no filename/structure protection; working around that means designing our own
+container scheme, which spec §5 forbids in spirit. rclone was evaluated as an
+independent-recovery tool but has no Cryptomator backend (verified against the
+rclone backend list); recovery therefore relies on the Cryptomator
+applications plus the documented format (see RECOVERY.md).
 
-1. Verify current format specifications and versions of each candidate
-   (do not rely on memory; link exact specs in the final document).
-2. Confirm filename encryption + programmatic (non-mounting) unlock for the
-   chosen Cryptomator-compatible implementation, or pick an alternative that
-   satisfies both.
-3. Confirm behavior on read-only/locked-down hosts (no driver, no admin).
-4. Prototype: create vault → unlock → add file → read back → recover with the
-   independent tool, on Windows 11.
-5. Decide the answer for "integrity of individual files" (manifest AEAD vs
-   format AEAD).
+**KDF note (spec §5):** Argon2id is preferred "when compatible with the
+selected vault format". Cryptomator's masterkey file format specifies scrypt,
+so Argon2id is *not* compatible; scrypt is memory-hard and its cost parameters
+are stored in the masterkey file. We deviate from Cryptomator's default
+(N = 2^15, r = 8 ≈ 32 MiB) by using **N = 2^20, r = 8, p = 1 (≈ 1 GiB)** for
+vaults we create, raising the offline-guessing cost substantially while
+remaining fully format-compatible. Unlocking therefore needs ~1 GiB of free
+RAM; Setup Mode can lower this for constrained hosts.
 
-## Decision
+## Format summary (as implemented)
 
-TBD — record: chosen format, format/version, reasons, rejected alternatives,
-and the recovery procedure pointer. This decision gates Phase 1.
+- `masterkey.cryptomator` — JSON: `version` (999, legacy), `scryptSalt`
+  (8 random bytes), `scryptCostParam` (N), `scryptBlockSize` (r), wrapped
+  `primaryMasterKey`/`hmacMasterKey` (AES-KW), `versionMac`
+  (HMAC-SHA-256 over the big-endian version, keyed with the MAC masterkey).
+  KEK = scrypt(password, salt‖pepper, N, r, p=1, 32 bytes).
+- `vault.cryptomator` — JWT (HS-256, key = encMasterKey‖macMasterKey):
+  `format` 8, `cipherCombo` `SIV_GCM`, `shorteningThreshold` 220, `jti` UUID.
+- Names — NFC-normalized UTF-8, encrypted with AES-SIV
+  (K = encMasterKey ‖ macMasterKey), parent directory ID as associated data,
+  stored as padded base64url + `.c9r`; > 220 characters → `.c9s` directory
+  (`name.c9s` mapping + `contents.c9r`).
+- Directories — random UUID directory IDs (`dir.c9r` markers), flattened
+  storage at `d/` + base32(sha1(aesSiv(dirId))) fan-out (2 + 30 chars).
+- File contents — 68-byte header (12-byte nonce ‖ AES-GCM payload with the
+  random per-file 32-byte content key ‖ 16-byte tag), then 32 KiB AES-GCM
+  chunks: 12-byte random nonce ‖ ciphertext ‖ 16-byte tag with
+  AAD = chunk index (64-bit BE) ‖ header nonce.
+
+## Residual risks / follow-ups
+
+- Interoperability test: open a vault created by this implementation with the
+  official Cryptomator application, and vice versa (required before Phase 1
+  release; the implementation follows the documented format).
+- Formal review of the SIV usage (deterministic names leak name equality
+  within a directory — inherent to the format, documented in the threat model).
+- File sizes and directory fan-out leak metadata (inherent; spec §9).

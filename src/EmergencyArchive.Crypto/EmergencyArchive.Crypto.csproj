@@ -1,7 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Description>Vault/encryption integration for the Emergency Archive. Delegates all cryptography to established, audited open-source formats (spec section 5) — never custom crypto.</Description>
+    <Description>Vault/encryption integration for the Emergency Archive. Implements the documented, open-source Cryptomator vault format 8 (see docs/CRYPTOGRAPHY.md) — no custom cryptography.</Description>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BouncyCastle.Cryptography" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="EmergencyArchive.Crypto.Tests" />
+  </ItemGroup>
 
 </Project>
