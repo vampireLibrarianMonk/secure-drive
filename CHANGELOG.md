@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Phase 5 — Linux support**: `scripts/test-linux.ps1` runs the entire test
+  suite plus a self-contained-deployment smoke test inside Docker (Ubuntu
+  .NET SDK image + a bare `ubuntu:24.04` runtime-less container);
+  `scripts/publish.ps1` produces self-contained single-file payloads for
+  Windows and Linux (UI + VaultCli) and the `START-LINUX` launcher. The full
+  suite passes on real Linux; clean-container builds caught and fixed latent
+  Windows-only incremental-build defects.
 - **Phase 4 — Administration / Setup Mode**: an owner-only dashboard after
   unlock (documents, archive size, free drive space, archive version, last
   update, integrity status), source management via folder picker (spec §13),

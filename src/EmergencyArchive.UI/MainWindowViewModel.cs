@@ -237,7 +237,7 @@ public partial class MainWindowViewModel : ObservableObject
 
     /// <summary>Leaves Setup Mode and refreshes the browse screen.</summary>
     [RelayCommand]
-    private void ExitSetup()
+    public void ExitSetup()
     {
         IsSetupMode = false;
         setup = null;
@@ -249,7 +249,7 @@ public partial class MainWindowViewModel : ObservableObject
 
     /// <summary>Locks the archive (also invoked when the window closes, spec section 21).</summary>
     [RelayCommand]
-    private void Lock()
+    public void Lock()
     {
         IsSetupMode = false;
         CleanupTempExports();

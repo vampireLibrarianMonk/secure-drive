@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.Input;
 using EmergencyArchive.Core;
+using EmergencyArchive.Crypto;
 using EmergencyArchive.Crypto.Vault;
 
 namespace EmergencyArchive.UI;

@@ -1,5 +1,6 @@
 using System.Text;
 using EmergencyArchive.Crypto.Vault;
+using VaultCli;
 
 // Interim command-line tool (until Setup Mode, Phase 4):
 //   VaultCli create <vault-directory>

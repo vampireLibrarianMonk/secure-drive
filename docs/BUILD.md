@@ -79,15 +79,45 @@ Adds (never deletes) `app/`, `vault/`, `public/`, `README.txt`,
 `public/RECOVERY-INSTRUCTIONS.txt`, and a `.emergency-archive-drive.json`
 marker. Refuses the system drive; `-Force` confirms non-empty drives.
 
-## Publishing (from Phase 1)
+## Publishing (Phase 5 — implemented)
 
 ```powershell
-dotnet publish src\EmergencyArchive.UI -c Release -r win-x64 --self-contained `
-  -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+powershell -ExecutionPolicy Bypass -File scripts\publish.ps1
 ```
 
-Output lands in `app/windows/` on the drive; Linux x64 equivalent in Phase 5
-(`app/linux-x64/`, `START-LINUX` launcher).
+Produces self-contained single-file payloads for **both** platforms:
+
+```text
+artifacts\publish\windows\EmergencyArchive.UI\   win-x64 UI (START-WINDOWS.exe)
+artifacts\publish\windows\VaultCli\              win-x64 owner CLI
+artifacts\publish\linux\EmergencyArchive.UI\     linux-x64 UI
+artifacts\publish\linux\VaultCli\                linux-x64 owner CLI
+artifacts\publish\START-LINUX                    bash launcher (chmod on first run)
+```
+
+Deployment to a prepared drive (spec section 4): copy
+`windows\EmergencyArchive.UI\EmergencyArchive.UI.exe` to the drive root as
+`START-WINDOWS.exe`, copy `linux\EmergencyArchive.UI\*` to
+`app\linux-x64\`, and `START-LINUX` to the drive root.
+
+## Testing on Linux (spec section 28, Phase 5 — implemented)
+
+`scripts/test-linux.ps1` validates the whole stack on real Linux via Docker:
+
+1. Stages the source (bin/obj/.git excluded) into a temp folder.
+2. Runs the **entire test suite** inside `mcr.microsoft.com/dotnet/sdk:10.0`
+   (Ubuntu-based) — all vault crypto, sync, and search behavior on Linux.
+3. Publishes VaultCli as a **self-contained linux-x64 single-file binary** and
+   executes it inside the container, and again in a bare `ubuntu:24.04`
+   container with **no .NET runtime** — proving the emergency-computer
+   deployment model.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\test-linux.ps1
+```
+
+Requires Docker Desktop in Linux container mode. The same container command
+is what a Linux CI runner would execute.
 
 ## Troubleshooting
 

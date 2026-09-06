@@ -12,6 +12,7 @@
     </Design.DataContext>
 
     <!-- Password screen (spec section 7) -->
+    <Panel>
     <StackPanel IsVisible="{Binding !IsUnlocked}"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
@@ -160,7 +161,7 @@
         <StackPanel Orientation="Horizontal" Spacing="10">
             <Button Content="ADD SOURCE…" Click="OnAddSourceClicked" Padding="14,6" />
             <Button Content="REMOVE SELECTED" Command="{Binding RemoveSourceCommand}" Padding="14,6" />
-            <TextBlock Text="{Binding SourceCount, StringFormat='{0} configured'}" VerticalAlignment="Center" Opacity="0.7" />
+            <TextBlock Text="{Binding SourceCount, StringFormat='{}{0} configured'}" VerticalAlignment="Center" Opacity="0.7" />
         </StackPanel>
 
         <!-- Password change (spec section 12) -->
@@ -178,4 +179,5 @@
         <TextBlock Text="{Binding SetupStatus}" TextWrapping="Wrap" Opacity="0.9" />
       </StackPanel>
     </ScrollViewer>
+    </Panel>
 </Window>

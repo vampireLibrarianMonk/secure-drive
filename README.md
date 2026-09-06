@@ -11,13 +11,14 @@ no external database, no installation:
 > password, and immediately receives a simple searchable interface for locating
 > important documents.
 
-**Status: Phase 3 complete — archive builder, manifest, and verification.**
+**Status: Phase 5 complete — cross-platform (Windows + Linux), tested in Docker.**
 Environment, build, SBOM pipeline, USB layout, the Cryptomator format 8 vault
-layer, full-text search (SQLite + FTS5 inside the encrypted vault), and the
+layer, full-text search (SQLite + FTS5 inside the encrypted vault), the
 archive update engine (source scanning, change detection, transactional
-updates, Verify Archive) are in place with 168 passing tests. Setup Mode UI
-arrives in Phase 4. See [CHANGELOG.md](CHANGELOG.md) and
-[docs/CRYPTOGRAPHY.md](docs/CRYPTOGRAPHY.md) for the vault format decision.
+updates, Verify Archive), Setup Mode administration, and Linux x64
+self-contained deployment (Docker-validated) are in place — 157+ tests green
+on both Windows and Linux. Remaining: replica management (Phase 6) and the
+hardening pass (Phase 7). See [CHANGELOG.md](CHANGELOG.md).
 
 The full design specification lives in
 [Emergency Archive — LLM IDE Design Specification.md](Emergency%20Archive%20%E2%80%94%20LLM%20IDE%20Design%20Specification.md).

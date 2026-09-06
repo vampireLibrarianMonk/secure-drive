@@ -90,6 +90,8 @@ public sealed partial class SetupViewModel : ObservableObject
 
     /// <summary>Raised when an update changed the stored documents; the browse screen reloads.</summary>
     public event EventHandler? DocumentsChanged;
+
+    private void OnDocumentsChanged() => DocumentsChanged?.Invoke(this, EventArgs.Empty);
 }
 
 /// <summary>One configured source directory shown in Setup Mode.</summary>

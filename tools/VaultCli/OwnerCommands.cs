@@ -1,11 +1,13 @@
 using System.IO;
 using EmergencyArchive.Crypto.Vault;
+using EmergencyArchive.Integrity;
+using EmergencyArchive.Search;
 using EmergencyArchive.Sync;
 
 namespace VaultCli;
 
 /// <summary>Phase 3 owner commands: source configuration and updates.</summary>
-internal static class OwnerCommands
+internal static partial class OwnerCommands
 {
     public static int Sources(string[] args, Func<string, string> prompt)
     {
