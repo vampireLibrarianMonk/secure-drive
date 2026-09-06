@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>Archive update engine for the Emergency Archive: source scanning, change detection, and transactional staging (spec section 14).</Description>
+  </PropertyGroup>
+
+</Project>

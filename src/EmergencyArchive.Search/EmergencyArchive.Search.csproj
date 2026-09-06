@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>Full-text search for the Emergency Archive: SQLite + FTS5 index maintenance and query building (spec section 8). The index lives inside the encrypted vault (spec section 9).</Description>
+  </PropertyGroup>
+
+</Project>

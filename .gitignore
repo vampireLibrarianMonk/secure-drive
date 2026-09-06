@@ -1,0 +1,20 @@
+# Build output
+bin/
+obj/
+out/
+publish/
+artifacts/
+TestResults/
+*.user
+*.suo
+
+# IDEs
+.vs/
+.idea/
+
+# Logs
+*.log
+
+# Generated SBOM artifacts (regenerate with scripts/generate-sbom.ps1)
+sbom/*.json
+sbom/*.xml

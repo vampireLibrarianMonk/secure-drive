@@ -1,0 +1,14 @@
+<Solution>
+  <Project Path="src/EmergencyArchive.Core/EmergencyArchive.Core.csproj" />
+  <Project Path="src/EmergencyArchive.Crypto/EmergencyArchive.Crypto.csproj" />
+  <Project Path="src/EmergencyArchive.Search/EmergencyArchive.Search.csproj" />
+  <Project Path="src/EmergencyArchive.Sync/EmergencyArchive.Sync.csproj" />
+  <Project Path="src/EmergencyArchive.Integrity/EmergencyArchive.Integrity.csproj" />
+  <Project Path="src/EmergencyArchive.UI/EmergencyArchive.UI.csproj" />
+  <Project Path="tests/EmergencyArchive.Core.Tests/EmergencyArchive.Core.Tests.csproj" />
+  <Project Path="tests/EmergencyArchive.Crypto.Tests/EmergencyArchive.Crypto.Tests.csproj" />
+  <Project Path="tests/EmergencyArchive.Search.Tests/EmergencyArchive.Search.Tests.csproj" />
+  <Project Path="tests/EmergencyArchive.Sync.Tests/EmergencyArchive.Sync.Tests.csproj" />
+  <Project Path="tests/EmergencyArchive.Integrity.Tests/EmergencyArchive.Integrity.Tests.csproj" />
+</Solution>
+

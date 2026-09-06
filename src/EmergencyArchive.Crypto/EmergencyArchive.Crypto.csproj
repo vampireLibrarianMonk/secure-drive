@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>Vault/encryption integration for the Emergency Archive. Delegates all cryptography to established, audited open-source formats (spec section 5) — never custom crypto.</Description>
+  </PropertyGroup>
+
+</Project>

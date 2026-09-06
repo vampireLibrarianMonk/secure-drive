@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>Integrity for the Emergency Archive: SHA-256 hashing, manifest verification, and archive health checks (spec sections 15-16).</Description>
+  </PropertyGroup>
+
+</Project>
