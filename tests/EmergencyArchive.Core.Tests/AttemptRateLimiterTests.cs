@@ -58,4 +58,24 @@ public class AttemptRateLimiterTests
         Assert.Equal(TimeSpan.FromSeconds(5), limiter.RemainingDelay(T0 + TimeSpan.FromSeconds(4)));
         Assert.Equal(TimeSpan.Zero, limiter.RemainingDelay(T0 + TimeSpan.FromSeconds(9)));
     }
+
+    [Fact]
+    public void TypicalFlow_MirrorsTheUiSequence()
+    {
+        var limiter = new AttemptRateLimiter();
+
+        // First entry: never blocked.
+        Assert.Equal(TimeSpan.Zero, limiter.RemainingDelay(T0));
+        limiter.RegisterAttempt(T0); // e.g. a wrong password
+
+        // An immediate retry is blocked with time remaining...
+        Assert.True(limiter.RemainingDelay(T0 + TimeSpan.FromSeconds(1)) > TimeSpan.Zero);
+
+        // ...after the window it is allowed again...
+        Assert.Equal(TimeSpan.Zero, limiter.RemainingDelay(T0 + AttemptRateLimiter.MinimumInterval));
+        limiter.RegisterAttempt(T0 + AttemptRateLimiter.MinimumInterval); // correct password -> unlocked
+
+        // ...but locking and re-entering at once is blocked again.
+        Assert.True(limiter.RemainingDelay(T0 + AttemptRateLimiter.MinimumInterval) > TimeSpan.Zero);
+    }
 }

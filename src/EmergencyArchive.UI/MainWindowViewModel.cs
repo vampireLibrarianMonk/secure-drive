@@ -71,6 +71,17 @@ public partial class MainWindowViewModel : ObservableObject
             return;
         }
 
+        // Enforce the 5 second interval on EVERY password entry (spec §19):
+        // this covers quick re-entry after LOCK and retries after integrity
+        // failures, not only wrong passwords. A blocked click does NOT restart
+        // the window — spamming cannot extend the lock indefinitely.
+        TimeSpan blockedFor = rateLimiter.RemainingDelay(DateTimeOffset.UtcNow);
+        if (blockedFor > TimeSpan.Zero)
+        {
+            await RunCooldownAsync(blockedFor);
+            return;
+        }
+
         IsBusy = true;
         StatusMessage = UnlockingMessage;
 
