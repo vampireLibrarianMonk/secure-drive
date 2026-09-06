@@ -2,11 +2,14 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <Description>Interim command-line vault tool for the Emergency Archive: create the archive vault and verify it without the UI, until Setup Mode ships (Phase 4). Dev/owner tool — not deployed to emergency drives.</Description>
+    <Description>Interim command-line vault tool for the Emergency Archive: create the archive vault, configure sources, run updates, verify, and inspect it without the UI, until Setup Mode ships (Phase 4). Dev/owner tool — not deployed to emergency drives.</Description>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\EmergencyArchive.Crypto\EmergencyArchive.Crypto.csproj" />
+    <ProjectReference Include="..\..\src\EmergencyArchive.Integrity\EmergencyArchive.Integrity.csproj" />
+    <ProjectReference Include="..\..\src\EmergencyArchive.Search\EmergencyArchive.Search.csproj" />
+    <ProjectReference Include="..\..\src\EmergencyArchive.Sync\EmergencyArchive.Sync.csproj" />
   </ItemGroup>
 
 </Project>

@@ -9,6 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Phase 3 — Archive Builder**: source configuration stored inside the vault
+  (spec §13, default exclusions `*.tmp`, `~$*`, `Thumbs.db`, `.DS_Store`,
+  `desktop.ini`), source scanning with SHA-256/size/mtime capture, change
+  detection against the manifest, and the transactional update engine
+  (spec §14): staged per-file writes (temp + atomic move), deletions, and the
+  new manifest written LAST as the commit marker — an interrupted update
+  leaves the previous known-good archive intact and re-applies idempotently.
+- **Verify Archive** (spec §16): re-hashes every stored document against the
+  manifest, reports valid / corrupt / missing / unexpected files plus stale
+  search-index entries, and reports HEALTHY only after a complete, successful
+  check.
+- **Incremental index updates** (gap closure from Phase 2): `SyncPlan`s are
+  applied to the FTS5 index directly (added/changed re-extracted from the
+  vault, deleted removed) instead of rebuilding.
+- **CJK searchability** (gap closure): per-character segmentation of CJK runs
+  in indexed bodies and queries, so substring searches like 证明 inside
+  出生医学证明内容 match.
+- **Archive manifest** (spec §15/§18): per-file SHA-256/size/mtime plus
+  archive id and `YYYY.MM.DD.sequence` version with daily sequence, stored
+  encrypted in the vault as the update commit marker.
+- VaultCli owner commands: `sources`, `sources-add`, `update`, `verify`.
 - **Phase 2 — Search**: SQLite + FTS5 index maintained entirely inside the
   encrypted vault (in-memory while unlocked; persisted as one encrypted file
   `index/search.index` — the plaintext index never touches disk, spec §9).

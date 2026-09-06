@@ -1,3 +1,4 @@
+using EmergencyArchive.Search.TextExtraction;
 using System.Text;
 
 namespace EmergencyArchive.Search;
@@ -36,7 +37,10 @@ public static class Fts5Query
                 expression.Append(' ');
             }
 
-            expression.Append('"').Append(terms[i].Replace("\"", "\"\"")).Append("\"*");
+            // Segment CJK runs so every character becomes a searchable token
+            // (the unicode61 tokenizer keeps CJK runs as single tokens).
+            string term = CjkText.Segment(terms[i]);
+            expression.Append('"').Append(term.Replace("\"", "\"\"")).Append("\"*");
         }
 
         return expression.ToString();

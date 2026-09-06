@@ -1,4 +1,5 @@
 using EmergencyArchive.Search;
+using EmergencyArchive.Search.TextExtraction;
 using Xunit;
 
 namespace EmergencyArchive.Search.Tests;
@@ -97,7 +98,9 @@ public class SearchIndexDatabaseTests : IDisposable
     [Fact]
     public void Search_HandlesUnicode()
     {
-        database.Upsert(Document("证件/出生证明.pdf", "证件/出生证明.pdf\n出生医学证明内容"));
+        // The body is segmented exactly like VaultSearchIndex.ComposeBody does.
+        string body = CjkText.Segment("证件/出生证明.pdf\n出生医学证明内容");
+        database.Upsert(Document("证件/出生证明.pdf", body));
 
         var results = database.Search(Fts5Query.Sanitize("出生证明"));
 

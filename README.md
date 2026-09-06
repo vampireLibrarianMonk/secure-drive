@@ -11,11 +11,12 @@ no external database, no installation:
 > password, and immediately receives a simple searchable interface for locating
 > important documents.
 
-**Status: Phase 2 complete — encrypted vault + full-text search implemented.**
+**Status: Phase 3 complete — archive builder, manifest, and verification.**
 Environment, build, SBOM pipeline, USB layout, the Cryptomator format 8 vault
-layer, and content search (SQLite + FTS5 inside the encrypted vault) are in
-place with 141 passing tests. Setup Mode and incremental archive updates
-arrive in Phase 3–4. See [CHANGELOG.md](CHANGELOG.md) and
+layer, full-text search (SQLite + FTS5 inside the encrypted vault), and the
+archive update engine (source scanning, change detection, transactional
+updates, Verify Archive) are in place with 168 passing tests. Setup Mode UI
+arrives in Phase 4. See [CHANGELOG.md](CHANGELOG.md) and
 [docs/CRYPTOGRAPHY.md](docs/CRYPTOGRAPHY.md) for the vault format decision.
 
 The full design specification lives in

@@ -64,9 +64,15 @@ RAM; Setup Mode can lower this for constrained hosts.
 
 ## Residual risks / follow-ups
 
-- Interoperability test: open a vault created by this implementation with the
-  official Cryptomator application, and vice versa (required before Phase 1
-  release; the implementation follows the documented format).
+- Interoperability test (manual, on the owner's machine): create a vault with
+  `VaultCli create`, then open it with the official Cryptomator application
+  and confirm the documents appear; conversely create a vault in Cryptomator
+  and confirm this implementation unlocks it. The implementation follows the
+  documented format and is covered by automated conformance tests, but a real
+  application round-trip should be performed before the first release.
 - Formal review of the SIV usage (deterministic names leak name equality
   within a directory — inherent to the format, documented in the threat model).
 - File sizes and directory fan-out leak metadata (inherent; spec §9).
+- CJK searchability is provided by per-character segmentation (see
+  `Search.TextExtraction.CjkText`); a trigram tokenizer is a possible later
+  upgrade for substring matching beyond single characters.

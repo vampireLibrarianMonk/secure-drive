@@ -61,6 +61,14 @@ public sealed partial class SearchIndexDatabase : IDisposable
         ftsDirty = true;
     }
 
+    /// <summary>Removes a document from the index. The FTS index is refreshed lazily before searching.</summary>
+    public void Remove(string relativePath)
+    {
+        ObjectDisposedException.ThrowIf(disposed, this);
+        Execute(connection, "DELETE FROM documents WHERE relative_path = @path;", ("path", relativePath));
+        ftsDirty = true;
+    }
+
     public int DocumentCount
     {
         get

@@ -41,7 +41,8 @@ public class Fts5QueryTests
     [Fact]
     public void Sanitize_HandlesUnicode()
     {
-        Assert.Equal("\"josé's\"* \"证件\"*", Fts5Query.Sanitize("josé's 证件"));
+        // CJK runs are segmented so every character is a searchable token.
+        Assert.Equal("\"josé's\"* \"证 件\"*", Fts5Query.Sanitize("josé's 证件"));
     }
 
     [Fact]

@@ -1,5 +1,6 @@
 using System.IO;
 using System.Text.Json;
+using EmergencyArchive.Core;
 using EmergencyArchive.Crypto.Vault;
 using EmergencyArchive.Integrity;
 using EmergencyArchive.Search.TextExtraction;
@@ -14,9 +15,9 @@ public sealed partial class VaultSearchIndex
     {
         var database = SearchIndexDatabase.OpenEmpty();
 
-        // Never index the index file itself.
+        // Never index infrastructure files (index, manifest, source config).
         var files = session.EnumerateFiles()
-            .Where(file => !string.Equals(file, IndexPath, StringComparison.OrdinalIgnoreCase))
+            .Where(file => !VaultPaths.IsInfrastructurePath(file))
             .ToList();
 
         var indexedAt = DateTimeOffset.UtcNow;
@@ -73,13 +74,60 @@ public sealed partial class VaultSearchIndex
         return sanitized.Length == 0 ? [] : database.Search(sanitized);
     }
 
-    /// <summary>The indexed body includes name and path so filename searches match (spec section 26).</summary>
+    /// <summary>Applies an update plan to the index: added/changed documents are re-extracted from the vault, deleted ones removed. The caller saves afterwards.</summary>
+    public void ApplyChanges(VaultSession session, SyncPlan plan, ArchiveManifest manifest)
+    {
+        foreach ((ChangeKind kind, string relativePath) in plan.EnumerateChanges())
+        {
+            if (kind == ChangeKind.Deleted)
+            {
+                database.Remove(relativePath);
+                continue;
+            }
+
+            byte[] content = session.ReadFile(relativePath);
+            string? text = DocumentTextExtractor.Extract(relativePath, new MemoryStream(content));
+            ManifestEntry? entry = manifest.Find(relativePath);
+            database.Upsert(new IndexedDocument(
+                RelativePath: relativePath,
+                LogicalName: Path.GetFileName(relativePath),
+                Category: CategoryFor(relativePath),
+                MimeType: MimeTypeFor(relativePath),
+                Size: content.Length,
+                ModifiedAt: session.GetLastWriteTimeUtc(relativePath),
+                IndexedAt: DateTimeOffset.UtcNow,
+                Sha256: entry?.Sha256 ?? Sha256.ComputeHash(new MemoryStream(content)),
+                Body: ComposeBody(relativePath, text)));
+        }
+    }
+
+    /// <summary>Counts index entries whose SHA-256 no longer matches the manifest (spec section 16: index consistency).</summary>
+    public int CountStaleEntries(ArchiveManifest manifest)
+    {
+        int stale = 0;
+        foreach (IndexedDocument document in database.GetAll())
+        {
+            ManifestEntry? entry = manifest.Find(document.RelativePath);
+            if (entry is null || !string.Equals(entry.Sha256, document.Sha256, StringComparison.OrdinalIgnoreCase))
+            {
+                stale++;
+            }
+        }
+
+        return stale;
+    }
+
+    /// <summary>
+    /// The indexed body includes name and path so filename searches match (spec
+    /// section 26), and CJK runs are segmented so every character is searchable.
+    /// </summary>
     internal static string ComposeBody(string relativePath, string? extractedText)
     {
         string name = Path.GetFileName(relativePath);
-        return string.IsNullOrEmpty(extractedText)
+        string body = string.IsNullOrEmpty(extractedText)
             ? $"{name}\n{relativePath}"
             : $"{name}\n{relativePath}\n{extractedText}";
+        return CjkText.Segment(body);
     }
 
     /// <summary>Category defaults to the top-level folder name, or Other at the root (spec section 10).</summary>

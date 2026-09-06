@@ -10,6 +10,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\EmergencyArchive.Core\EmergencyArchive.Core.csproj" />
     <ProjectReference Include="..\EmergencyArchive.Crypto\EmergencyArchive.Crypto.csproj" />
     <ProjectReference Include="..\EmergencyArchive.Integrity\EmergencyArchive.Integrity.csproj" />
   </ItemGroup>

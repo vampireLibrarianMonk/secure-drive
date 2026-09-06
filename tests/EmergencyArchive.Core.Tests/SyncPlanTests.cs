@@ -1,7 +1,7 @@
-using EmergencyArchive.Sync;
+using EmergencyArchive.Core;
 using Xunit;
 
-namespace EmergencyArchive.Sync.Tests;
+namespace EmergencyArchive.Core.Tests;
 
 public class SyncPlanTests
 {

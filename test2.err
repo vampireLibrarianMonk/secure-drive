@@ -1,0 +1,2 @@
+[xUnit.net 00:00:00.41]     EmergencyArchive.Sync.Tests.ArchiveUpdaterTests.SecondUpdate_DetectsChanges_AndUpdatesIndexIncrementally [FAIL]
+Test Run Failed.

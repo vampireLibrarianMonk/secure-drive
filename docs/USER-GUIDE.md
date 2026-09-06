@@ -74,6 +74,10 @@ carefully.
 Setup Mode is reached from inside the application, **after** unlocking with
 the archive password. Ordinary users never need it.
 
+> **Interim note (until Setup Mode ships):** the archive owner maintains the
+> archive with the command-line tool — `sources-add`, `update`, and `verify`
+> (see `docs/BUILD.md`). The behaviour matches the descriptions below.
+
 ### Update the archive
 
 After changing your source folders (the folders on your computer that hold the

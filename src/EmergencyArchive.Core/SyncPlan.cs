@@ -1,4 +1,4 @@
-namespace EmergencyArchive.Sync;
+namespace EmergencyArchive.Core;
 
 /// <summary>The kind of change detected for one file during an archive update (spec section 14).</summary>
 public enum ChangeKind

@@ -27,6 +27,25 @@ nothing in the solution.
 
 ## Key flows
 
+### Update engine (Phase 3 — implemented)
+
+```text
+scan sources (spec §13: exclusions *.tmp, ~$*, Thumbs.db, .DS_Store…)
+   → SHA-256 every source file → diff against manifest (SyncPlan)
+   → apply added/changed with staged (temp + atomic move) writes
+   → apply deletions → write new manifest LAST (commit marker)
+   → apply the plan to the FTS5 index incrementally
+```
+
+- Interrupted update: the previous manifest stays the commit marker; the next
+  update re-plans from it and re-applies changes idempotently (spec §14).
+- The manifest (spec §15) lives encrypted in the vault at
+  `manifest/archive-manifest.json` and carries the archive version
+  `YYYY.MM.DD.sequence` (spec §18) and per-file SHA-256.
+- Verify Archive (spec §16) re-hashes every document, reports valid / corrupt
+  / missing / unexpected files and stale index entries, and only then reports
+  HEALTHY.
+
 ### Search (Phase 2 — implemented)
 
 ```text

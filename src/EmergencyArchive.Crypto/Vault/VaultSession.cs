@@ -143,6 +143,40 @@ public sealed partial class VaultSession : IDisposable
         return File.Exists(LocateFileOrNull(parent.Dir, parent.DirId, segments[^1]) ?? string.Empty);
     }
 
+    /// <summary>Removes a stored file. Returns false when it does not exist. Empty short-name folders are pruned.</summary>
+    public bool RemoveFile(string cleartextRelativePath)
+    {
+        ThrowIfDisposed();
+        string[] segments = SplitPath(cleartextRelativePath);
+        if (!TryResolveDirectory(segments.AsSpan(0, segments.Length - 1), out (string DirPath, string DirId) parent))
+        {
+            return false;
+        }
+
+        string ciphertextName = VaultNames.EncryptName(keys, segments[^1], parent.DirId);
+        string direct = Path.Combine(parent.DirPath, ciphertextName);
+        if (File.Exists(direct))
+        {
+            File.Delete(direct);
+            return true;
+        }
+
+        string shortDir = Path.Combine(parent.DirPath, VaultNames.ShortenCiphertextName(ciphertextName));
+        string contents = Path.Combine(shortDir, ContentsFile);
+        if (File.Exists(contents))
+        {
+            File.Delete(contents);
+            if (Directory.GetFiles(shortDir).Length == 0 && Directory.GetDirectories(shortDir).Length == 0)
+            {
+                Directory.Delete(shortDir);
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
     /// <summary>Returns the last write time (UTC) of a stored file's encrypted form (spec section 8 metadata).</summary>
     public DateTimeOffset GetLastWriteTimeUtc(string cleartextRelativePath)
     {

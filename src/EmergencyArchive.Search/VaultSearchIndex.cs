@@ -1,4 +1,5 @@
 using System.Text.Json;
+using EmergencyArchive.Core;
 using EmergencyArchive.Crypto.Vault;
 
 namespace EmergencyArchive.Search;
@@ -12,7 +13,7 @@ namespace EmergencyArchive.Search;
 /// </summary>
 public sealed partial class VaultSearchIndex : IDisposable
 {
-    public const string IndexPath = "index/search.index";
+    public const string IndexPath = VaultPaths.IndexPath;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {

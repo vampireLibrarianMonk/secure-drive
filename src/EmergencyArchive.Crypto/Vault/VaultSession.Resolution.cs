@@ -151,7 +151,30 @@ public sealed partial class VaultSession
             contentPath = Path.Combine(parentDirPath, ciphertextName);
         }
 
-        using FileStream stream = File.Create(contentPath);
-        VaultContent.EncryptStream(keys, content, stream);
+        // Staged write: encrypt to a sidecar name first (ignored by listing),
+        // then move over the final name — a partial write never replaces a
+        // good file, and unknown sidecars are skipped when listing.
+        string tempPath = contentPath + ".staging";
+        try
+        {
+            using (FileStream stream = File.Create(tempPath))
+            {
+                VaultContent.EncryptStream(keys, content, stream);
+            }
+
+            File.Move(tempPath, contentPath, overwrite: true);
+        }
+        catch
+        {
+            try
+            {
+                File.Delete(tempPath);
+            }
+            catch (IOException)
+            {
+            }
+
+            throw;
+        }
     }
 }

@@ -22,6 +22,10 @@ try
         "list" => DoList(args),
         "put" => DoPut(args),
         "get" => DoGet(args),
+        "sources" => OwnerCommands.Sources(args, PromptPassword),
+        "sources-add" => OwnerCommands.SourcesAdd(args, PromptPassword),
+        "update" => OwnerCommands.Update(args, PromptPassword),
+        "verify" => OwnerCommands.Verify(args, PromptPassword),
         _ => UnknownCommand(args[0]),
     };
 }
@@ -43,6 +47,10 @@ static void PrintUsage()
     Console.WriteLine("  VaultCli list   <vault-directory>");
     Console.WriteLine("  VaultCli put    <vault-directory> <relative-path> <source-file>");
     Console.WriteLine("  VaultCli get    <vault-directory> <relative-path> <destination-file>");
+    Console.WriteLine("  VaultCli sources <vault-directory>");
+    Console.WriteLine("  VaultCli sources-add <vault-directory> <source-directory> [alias]");
+    Console.WriteLine("  VaultCli update <vault-directory>");
+    Console.WriteLine("  VaultCli verify <vault-directory>");
 }
 
 static int UnknownCommand(string command)
