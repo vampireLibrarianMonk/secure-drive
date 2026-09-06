@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Phase 4 — Administration / Setup Mode**: an owner-only dashboard after
+  unlock (documents, archive size, free drive space, archive version, last
+  update, integrity status), source management via folder picker (spec §13),
+  UPDATE ARCHIVE (spec §14 engine with progress), VERIFY ARCHIVE (spec §16),
+  REBUILD SEARCH INDEX (spec §24), password change (re-encrypts the
+  masterkey file, policy-validated, atomic write), and recovery-instructions
+  export to the drive's `public\` folder.
 - **Phase 3 — Archive Builder**: source configuration stored inside the vault
   (spec §13, default exclusions `*.tmp`, `~$*`, `Thumbs.db`, `.DS_Store`,
   `desktop.ini`), source scanning with SHA-256/size/mtime capture, change

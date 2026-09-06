@@ -9,6 +9,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\EmergencyArchive.Core\EmergencyArchive.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="EmergencyArchive.Crypto.Tests" />
   </ItemGroup>
 

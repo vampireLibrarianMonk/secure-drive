@@ -61,4 +61,10 @@ public sealed record SourceConfiguration(IReadOnlyList<SourceDirectory> Sources)
         var others = Sources.Where(s => !string.Equals(s.EffectiveAlias, source.EffectiveAlias, StringComparison.OrdinalIgnoreCase));
         return new SourceConfiguration([.. others, source]);
     }
+
+    /// <summary>Removes the source with the given effective alias.</summary>
+    public SourceConfiguration WithoutSource(string alias)
+    {
+        return new SourceConfiguration([.. Sources.Where(s => !string.Equals(s.EffectiveAlias, alias, StringComparison.OrdinalIgnoreCase))]);
+    }
 }

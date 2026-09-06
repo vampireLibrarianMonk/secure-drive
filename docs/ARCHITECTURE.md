@@ -46,6 +46,22 @@ scan sources (spec §13: exclusions *.tmp, ~$*, Thumbs.db, .DS_Store…)
   / missing / unexpected files and stale index entries, and only then reports
   HEALTHY.
 
+### Setup Mode (Phase 4 — implemented)
+
+The SETUP button (owner only, after unlock) opens the administration screen:
+
+- Dashboard: archive id/version, document count, logical size, free drive
+  space, last update, and the integrity status.
+- UPDATE ARCHIVE: runs the Phase 3 engine with live progress, then applies
+  the plan to the search index incrementally and refreshes the browse list.
+- VERIFY ARCHIVE: re-hashes every document against the manifest and reports
+  corrupt / missing / unexpected files plus stale index entries.
+- REBUILD SEARCH INDEX: full index rebuild (spec §24 recovery path).
+- Sources: add via folder picker / remove; stored encrypted in the vault.
+- Change password: re-encrypts the masterkey file (policy-validated, atomic
+  write). Applies to this replica — repeat on every replica (spec §17).
+- Export recovery instructions: refreshes `public\RECOVERY-INSTRUCTIONS.txt`.
+
 ### Search (Phase 2 — implemented)
 
 ```text

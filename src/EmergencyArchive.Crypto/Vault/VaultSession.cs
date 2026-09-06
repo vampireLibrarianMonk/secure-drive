@@ -143,6 +143,22 @@ public sealed partial class VaultSession : IDisposable
         return File.Exists(LocateFileOrNull(parent.Dir, parent.DirId, segments[^1]) ?? string.Empty);
     }
 
+    /// <summary>
+    /// Re-encrypts the masterkey file with a new password (spec section 12:
+    /// password change). The vault keys stay the same; only the KEK changes.
+    /// </summary>
+    public void ChangePassword(string newPassword)
+    {
+        ThrowIfDisposed();
+        var errors = PasswordPolicy.Validate(newPassword);
+        if (errors.Count > 0)
+        {
+            throw new ArgumentException(string.Join(" ", errors), nameof(newPassword));
+        }
+
+        VaultMasterkeyFile.Persist(vaultRootPath, keys, newPassword);
+    }
+
     /// <summary>Removes a stored file. Returns false when it does not exist. Empty short-name folders are pruned.</summary>
     public bool RemoveFile(string cleartextRelativePath)
     {

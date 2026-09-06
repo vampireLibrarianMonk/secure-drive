@@ -46,14 +46,17 @@
     </StackPanel>
 
     <!-- Archive screen (read-only, spec sections 7/11/22) -->
-    <Grid IsVisible="{Binding IsUnlocked}" Margin="16"
+    <Grid IsVisible="{Binding IsBrowsing}" Margin="16"
           RowDefinitions="Auto,Auto,*,Auto,Auto">
         <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
             <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                 <TextBlock Text="EMERGENCY ARCHIVE" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center" />
                 <TextBlock Text="READ ONLY" FontSize="13" VerticalAlignment="Center" Opacity="0.7" />
             </StackPanel>
-            <Button Grid.Column="1" Content="LOCK" Command="{Binding LockCommand}" Padding="22,6" />
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                <Button Content="SETUP" Command="{Binding EnterSetupCommand}" Padding="16,6" />
+                <Button Content="LOCK" Command="{Binding LockCommand}" Padding="22,6" />
+            </StackPanel>
         </Grid>
 
         <Grid Grid.Row="1" ColumnDefinitions="*,Auto" Margin="0,10,0,0">
@@ -99,4 +102,80 @@
                    Opacity="0.85"
                    Margin="0,10,0,0" />
     </Grid>
+
+    <!-- Setup Mode (spec sections 12/13/16; owner only, reached after unlock) -->
+    <ScrollViewer IsVisible="{Binding IsSetupMode}"
+                  DataContext="{Binding Setup}"
+                  x:DataType="vm:SetupViewModel"
+                  Margin="16">
+      <StackPanel Spacing="14">
+        <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Text="ARCHIVE SETUP" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center" />
+            <Button Grid.Column="1" Content="DONE" Click="OnSetupDoneClicked" Padding="18,6" />
+        </Grid>
+
+        <!-- Dashboard (spec section 12) -->
+        <Grid ColumnDefinitions="*,*,*" Margin="0,4,0,0">
+            <StackPanel Spacing="2">
+                <TextBlock Text="Documents" FontSize="12" Opacity="0.7" />
+                <TextBlock Text="{Binding DocumentCountDisplay}" FontWeight="SemiBold" />
+                <TextBlock Text="Archive size" FontSize="12" Opacity="0.7" Margin="0,6,0,0" />
+                <TextBlock Text="{Binding ArchiveSizeDisplay}" FontWeight="SemiBold" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Spacing="2">
+                <TextBlock Text="Free drive space" FontSize="12" Opacity="0.7" />
+                <TextBlock Text="{Binding DriveFreeDisplay}" FontWeight="SemiBold" />
+                <TextBlock Text="Last update" FontSize="12" Opacity="0.7" Margin="0,6,0,0" />
+                <TextBlock Text="{Binding LastUpdateDisplay}" FontWeight="SemiBold" />
+            </StackPanel>
+            <StackPanel Grid.Column="2" Spacing="2">
+                <TextBlock Text="Archive id" FontSize="12" Opacity="0.7" />
+                <TextBlock Text="{Binding ArchiveId}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                <TextBlock Text="Archive version" FontSize="12" Opacity="0.7" Margin="0,6,0,0" />
+                <TextBlock Text="{Binding ArchiveVersion}" FontWeight="SemiBold" />
+            </StackPanel>
+        </Grid>
+
+        <TextBlock Text="{Binding IntegrityStatus}" TextWrapping="Wrap" FontWeight="SemiBold" />
+
+        <!-- Update / verify / rebuild -->
+        <StackPanel Orientation="Horizontal" Spacing="10">
+            <Button Content="UPDATE ARCHIVE" Command="{Binding UpdateCommand}" Padding="16,6" />
+            <Button Content="VERIFY ARCHIVE" Command="{Binding VerifyCommand}" Padding="16,6" />
+            <Button Content="REBUILD SEARCH INDEX" Command="{Binding RebuildIndexCommand}" Padding="16,6" />
+        </StackPanel>
+
+        <!-- Sources (spec section 13) -->
+        <TextBlock Text="Sources" FontSize="14" FontWeight="SemiBold" Margin="0,6,0,0" />
+        <ListBox ItemsSource="{Binding Sources}" SelectedItem="{Binding SelectedSource}" MaxHeight="120">
+            <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:SourceItemViewModel">
+                    <StackPanel Margin="4,2">
+                        <TextBlock Text="{Binding Alias}" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding Path}" FontSize="11" Opacity="0.8" TextWrapping="Wrap" />
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+        <StackPanel Orientation="Horizontal" Spacing="10">
+            <Button Content="ADD SOURCE…" Click="OnAddSourceClicked" Padding="14,6" />
+            <Button Content="REMOVE SELECTED" Command="{Binding RemoveSourceCommand}" Padding="14,6" />
+            <TextBlock Text="{Binding SourceCount, StringFormat='{0} configured'}" VerticalAlignment="Center" Opacity="0.7" />
+        </StackPanel>
+
+        <!-- Password change (spec section 12) -->
+        <TextBlock Text="Change password" FontSize="14" FontWeight="SemiBold" Margin="0,6,0,0" />
+        <Grid ColumnDefinitions="*,*,Auto" ColumnSpacing="8">
+            <TextBox PasswordChar="&#x2022;" Text="{Binding NewPassword}" Watermark="New password" />
+            <TextBox Grid.Column="1" PasswordChar="&#x2022;" Text="{Binding ConfirmNewPassword}" Watermark="Repeat new password" />
+            <Button Grid.Column="2" Content="CHANGE PASSWORD" Command="{Binding ChangePasswordCommand}" Padding="14,6" />
+        </Grid>
+
+        <!-- Recovery -->
+        <Button Content="EXPORT RECOVERY INSTRUCTIONS" Command="{Binding ExportRecoveryInstructionsCommand}"
+                Padding="14,6" HorizontalAlignment="Left" />
+
+        <TextBlock Text="{Binding SetupStatus}" TextWrapping="Wrap" Opacity="0.9" />
+      </StackPanel>
+    </ScrollViewer>
 </Window>

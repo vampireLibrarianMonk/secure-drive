@@ -94,7 +94,9 @@ public static class VaultMasterkeyFile
             Convert.ToBase64String(ComputeVersionMac(keys.MacKey.ToArray(), LegacyVersion)));
 
         string path = Path.Combine(vaultRootPath, FileName);
-        File.WriteAllText(path, JsonSerializer.Serialize(dto, JsonOptions));
+        string tempPath = path + ".staging";
+        File.WriteAllText(tempPath, JsonSerializer.Serialize(dto, JsonOptions));
+        File.Move(tempPath, path, overwrite: true); // atomic: a partial write never destroys the vault
         CryptographicOperations.ZeroMemory(kek);
     }
 

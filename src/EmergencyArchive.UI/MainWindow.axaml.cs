@@ -61,4 +61,35 @@ public partial class MainWindow : Window
         ViewModel.ExportDocumentTo(document.RelativePath, target);
         ViewModel.StatusMessage = $"Exported '{document.Name}'. Remember where you saved it — the copy is NOT encrypted.";
     }
+
+    private async void OnAddSourceClicked(object? sender, RoutedEventArgs e)
+    {
+        var setup = ViewModel.Setup;
+        if (setup is null)
+        {
+            return;
+        }
+
+        var storage = TopLevel.GetTopLevel(this)?.StorageProvider;
+        if (storage is null)
+        {
+            return;
+        }
+
+        var folders = await storage.OpenFolderPickerAsync(new FolderPickerOpenOptions
+        {
+            Title = "Choose a source directory",
+            AllowMultiple = false,
+        });
+
+        if (folders.Count > 0 && folders[0].TryGetLocalPath() is { } localPath)
+        {
+            setup.AddSourceFromPath(localPath);
+        }
+    }
+
+    private void OnSetupDoneClicked(object? sender, RoutedEventArgs e)
+    {
+        ViewModel.ExitSetup();
+    }
 }

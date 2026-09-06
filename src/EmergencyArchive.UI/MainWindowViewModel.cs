@@ -1,23 +1,28 @@
 using System.Collections.ObjectModel;
 using System.IO;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EmergencyArchive.Core;
 using EmergencyArchive.Crypto.Vault;
+using EmergencyArchive.Search;
 
 namespace EmergencyArchive.UI;
 
 /// <summary>
-/// Orchestrates the two application screens: the emergency password screen
-/// (spec section 7) and the read-only archive screen, including the 5 second
-/// rate limit between password attempts (spec section 19).
+/// Orchestrates the application screens: the emergency password screen
+/// (spec section 7), the read-only archive screen, and Setup Mode (spec
+/// section 12), including the 5 second rate limit between password attempts
+/// (spec section 19).
 /// </summary>
 public partial class MainWindowViewModel : ObservableObject
 {
     private readonly AttemptRateLimiter rateLimiter = new();
     private VaultSession? session;
     private VaultSearchIndex? searchIndex;
+    private string? vaultPath;
     private string? openTempDirectory;
+    private SetupViewModel? setup;
 
     public const string ReadyMessage = "Enter the archive password to continue.";
     public const string UnlockingMessage = "Unlocking archive… (deriving the key takes a moment)";
@@ -46,11 +51,22 @@ public partial class MainWindowViewModel : ObservableObject
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SearchCommand))]
+    [NotifyCanExecuteChangedFor(nameof(EnterSetupCommand))]
     private bool isUnlocked;
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SearchCommand))]
+    [NotifyCanExecuteChangedFor(nameof(EnterSetupCommand))]
     private bool isIndexing;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsBrowsing))]
+    private bool isSetupMode;
+
+    /// <summary>Browse screen is visible while unlocked and not in Setup Mode.</summary>
+    public bool IsBrowsing => IsUnlocked && !IsSetupMode;
+
+    public SetupViewModel? Setup => setup;
 
     [ObservableProperty] private string? searchText;
 
@@ -73,13 +89,6 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanAttemptUnlock))]
     private async Task UnlockAsync()
     {
-        string? vaultPath = VaultLocator.Locate();
-        if (vaultPath is null)
-        {
-            StatusMessage = NoVaultMessage;
-            return;
-        }
-
         // Enforce the 5 second interval on EVERY password entry (spec §19):
         // this covers quick re-entry after LOCK and retries after integrity
         // failures, not only wrong passwords. A blocked click does NOT restart
@@ -88,6 +97,13 @@ public partial class MainWindowViewModel : ObservableObject
         if (blockedFor > TimeSpan.Zero)
         {
             await RunCooldownAsync(blockedFor);
+            return;
+        }
+
+        string? locatedVaultPath = VaultLocator.Locate();
+        if (locatedVaultPath is null)
+        {
+            StatusMessage = NoVaultMessage;
             return;
         }
 
@@ -102,8 +118,9 @@ public partial class MainWindowViewModel : ObservableObject
 
         try
         {
-            VaultSession opened = await Task.Run(() => VaultStore.Unlock(vaultPath, password));
+            VaultSession opened = await Task.Run(() => VaultStore.Unlock(locatedVaultPath, password));
             session = opened;
+            vaultPath = locatedVaultPath;
             LoadDocuments();
             IsUnlocked = true;
             StatusMessage = UnlockedMessage;
@@ -197,15 +214,50 @@ public partial class MainWindowViewModel : ObservableObject
         }
     }
 
+    /// <summary>Enters Setup Mode (spec section 12) after normal authentication.</summary>
+    [RelayCommand(CanExecute = nameof(CanEnterSetup))]
+    private void EnterSetup()
+    {
+        if (session is null)
+        {
+            return;
+        }
+
+        var setupViewModel = new SetupViewModel(
+            session,
+            vaultPath!,
+            () => searchIndex,
+            newIndex => searchIndex = newIndex);
+        setupViewModel.DocumentsChanged += (_, _) => Dispatcher.UIThread.Post(LoadDocuments);
+
+        setup = setupViewModel;
+        OnPropertyChanged(nameof(Setup));
+        IsSetupMode = true;
+    }
+
+    /// <summary>Leaves Setup Mode and refreshes the browse screen.</summary>
+    [RelayCommand]
+    private void ExitSetup()
+    {
+        IsSetupMode = false;
+        setup = null;
+        LoadDocuments();
+        SearchCommand.NotifyCanExecuteChanged();
+    }
+
+    private bool CanEnterSetup => IsUnlocked && !IsBusy && !IsIndexing;
+
     /// <summary>Locks the archive (also invoked when the window closes, spec section 21).</summary>
     [RelayCommand]
     private void Lock()
     {
+        IsSetupMode = false;
         CleanupTempExports();
         session?.Dispose();
         session = null;
         searchIndex?.Dispose();
         searchIndex = null;
+        setup = null;
         Documents.Clear();
         FilteredDocuments.Clear();
         SelectedDocument = null;
