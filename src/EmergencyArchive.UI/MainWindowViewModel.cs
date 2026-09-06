@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.Input;
 using EmergencyArchive.Core;
 using EmergencyArchive.Crypto.Vault;
 using EmergencyArchive.Search;
+using EmergencyArchive.Sync;
 
 namespace EmergencyArchive.UI;
 
