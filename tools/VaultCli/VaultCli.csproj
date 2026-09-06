@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <Description>Interim command-line vault tool for the Emergency Archive: create the archive vault and verify it without the UI, until Setup Mode ships (Phase 4). Dev/owner tool — not deployed to emergency drives.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\EmergencyArchive.Crypto\EmergencyArchive.Crypto.csproj" />
+  </ItemGroup>
+
+</Project>

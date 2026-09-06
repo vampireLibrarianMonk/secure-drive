@@ -5,6 +5,7 @@
   <Project Path="src/EmergencyArchive.Sync/EmergencyArchive.Sync.csproj" />
   <Project Path="src/EmergencyArchive.Integrity/EmergencyArchive.Integrity.csproj" />
   <Project Path="src/EmergencyArchive.UI/EmergencyArchive.UI.csproj" />
+  <Project Path="tools/VaultCli/VaultCli.csproj" />
   <Project Path="tests/EmergencyArchive.Core.Tests/EmergencyArchive.Core.Tests.csproj" />
   <Project Path="tests/EmergencyArchive.Crypto.Tests/EmergencyArchive.Crypto.Tests.csproj" />
   <Project Path="tests/EmergencyArchive.Search.Tests/EmergencyArchive.Search.Tests.csproj" />

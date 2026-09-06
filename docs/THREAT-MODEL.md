@@ -13,6 +13,12 @@ Status: living document. Baseline from spec §23–§25.
 
 - Lost or stolen USB drive: strong encryption + memory-hard KDF; offline
   password guessing is expensive (and futile against a strong passphrase).
+- **Password hammering through the application UI**: a minimum interval of
+  5 seconds is enforced between password attempts, with a visible countdown
+  (spec §19). This is a UI-level anti-hammering convenience only — it is NOT a
+  security boundary. An attacker with the drive bypasses the application and
+  attacks the scrypt key derivation offline; the password strength and KDF
+  cost remain the real defense.
 - Casual unauthorized access and offline filesystem inspection: no plaintext
   document data or sensitive filenames outside the vault; the SQLite index
   lives inside the vault (spec §9).

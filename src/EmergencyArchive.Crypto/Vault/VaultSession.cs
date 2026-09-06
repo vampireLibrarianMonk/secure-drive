@@ -149,4 +149,33 @@ public sealed partial class VaultSession : IDisposable
         ThrowIfDisposed();
         EnsureDirectory(SplitPath(cleartextRelativeDir));
     }
+
+    /// <summary>
+    /// Recursively enumerates every stored document as a cleartext-relative
+    /// path (forward-slash separated), e.g. <c>Insurance/Home policy.pdf</c>.
+    /// </summary>
+    public IEnumerable<string> EnumerateFiles(string cleartextRelativeDir = "")
+    {
+        ThrowIfDisposed();
+        return EnumerateFilesCore(string.IsNullOrWhiteSpace(cleartextRelativeDir) ? string.Empty : cleartextRelativeDir.Trim());
+    }
+
+    private IEnumerable<string> EnumerateFilesCore(string relativeDir)
+    {
+        foreach (VaultEntry entry in List(relativeDir))
+        {
+            string childPath = relativeDir.Length == 0 ? entry.Name : $"{relativeDir}/{entry.Name}";
+            if (entry.Kind == VaultEntryKind.Directory)
+            {
+                foreach (string nested in EnumerateFilesCore(childPath))
+                {
+                    yield return nested;
+                }
+            }
+            else
+            {
+                yield return childPath;
+            }
+        }
+    }
 }

@@ -42,6 +42,14 @@ password**, given to you by the archive owner.
 6. **Lock when finished.** Click **LOCK** or simply close the application. The
    archive locks immediately and the password is forgotten.
 
+### Wrong password and the 5-second pause
+
+After **every** password attempt the application enforces a **5-second wait**
+before the next attempt is allowed, with an on-screen countdown. Do not be
+alarmed by the pause: it is a deliberate protection against someone trying
+many passwords through the application. Take your time and enter the password
+carefully.
+
 ### Rules for an emergency
 
 - **Emergency Mode is read-only.** You cannot accidentally damage the archive;

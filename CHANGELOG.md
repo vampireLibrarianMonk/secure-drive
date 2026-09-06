@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Phase 1 — Minimum Viable Vault**: the emergency screen now unlocks a real
+  Cryptomator format 8 vault and shows the stored documents (name filter,
+  OPEN via the host application, EXPORT / COPY to an encrypted-file-aware
+  save dialog). LOCK (or closing the window) disposes the session, clears
+  key material, and removes the per-session plaintext working folder used by
+  OPEN, with the honest caveat that deletion is not forensic erasure.
+- **5-second rate limit between password attempts** (spec §19):
+  `AttemptRateLimiter` in Core, enforced by the UI with a visible countdown
+  after every attempt. Documented as a UI-level anti-hammering convenience,
+  not a security boundary (offline attacks target scrypt directly).
+- `VaultLocator` — finds `vault\` per the spec §4 drive layout, with an
+  `EMERGENCY_ARCHIVE_VAULT_PATH` development override (a path, not a secret).
+- `VaultCli` tool (interim until Setup Mode, Phase 4): create/list/put/get
+  for the archive owner, passwords prompted, never on the command line.
 - **Phase 0 architecture decision**: the encrypted vault is the documented
   open-source **Cryptomator vault format 8** (SIV_GCM) — see
   docs/CRYPTOGRAPHY.md for the evaluation and rationale; independent recovery

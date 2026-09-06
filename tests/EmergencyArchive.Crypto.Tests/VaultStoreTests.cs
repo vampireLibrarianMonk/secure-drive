@@ -147,6 +147,31 @@ public class VaultStoreTests : IDisposable
     }
 
     [Fact]
+    public void EnumerateFiles_ListsAllDocumentsRecursively()
+    {
+        using (VaultSession session = VaultStore.Unlock(vaultDir, Password))
+        {
+            session.WriteFile("Birth Certificate.pdf", [1]);
+            session.CreateDirectory("Insurance/2026");
+            session.WriteFile("Insurance/Home policy.pdf", [2]);
+            session.WriteFile("Insurance/2026/Travel.pdf", [3]);
+            session.WriteFile("证件.docx", [4]);
+        }
+
+        using VaultSession verify = VaultStore.Unlock(vaultDir, Password);
+
+        string[] expected =
+        [
+            "Birth Certificate.pdf",
+            "Insurance/2026/Travel.pdf",
+            "Insurance/Home policy.pdf",
+            "证件.docx",
+        ];
+        string[] actual = [.. verify.EnumerateFiles().OrderBy(p => p, StringComparer.Ordinal)];
+        Assert.Equal(expected, actual);
+    }
+
+    [Fact]
     public void TamperedMasterkeyFile_PreventsUnlock()
     {
         string masterkeyPath = Path.Combine(vaultDir, "masterkey.cryptomator");

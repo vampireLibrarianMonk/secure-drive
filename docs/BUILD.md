@@ -39,10 +39,26 @@ parent environment is refreshed), they fall back to
 ## Everyday commands
 
 ```powershell
-dotnet build EmergencyArchive.sln
-dotnet test EmergencyArchive.sln
-dotnet run --project src\EmergencyArchive.UI        # emergency screen shell
+dotnet build EmergencyArchive.slnx
+dotnet test EmergencyArchive.slnx
+dotnet run --project src\EmergencyArchive.UI        # emergency screen (unlock UI)
 ```
+
+## Creating the actual archive vault (interim, until Setup Mode)
+
+Until Setup Mode ships in Phase 4, the archive owner creates the vault with
+the command-line tool:
+
+```powershell
+dotnet run --project tools\VaultCli -- create D:\vault     # prompts for the password twice
+dotnet run --project tools\VaultCli -- put D:\vault "Insurance/Home.pdf" "C:\Users\me\Documents\Home.pdf"
+dotnet run --project tools\VaultCli -- list D:\vault
+```
+
+The result is a standard Cryptomator format 8 vault (see
+docs/CRYPTOGRAPHY.md) — the owner can verify it by opening it with the
+Cryptomator application. Passwords are prompted, never passed on the command
+line (spec §19).
 
 ## SBOM
 
