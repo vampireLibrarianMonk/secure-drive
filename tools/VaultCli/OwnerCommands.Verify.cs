@@ -59,6 +59,12 @@ internal static partial class OwnerCommands
 
         Console.WriteLine(report.Healthy ? "OVERALL: HEALTHY" : "OVERALL: ISSUES FOUND — do not modify this drive.");
 
+        var operationLog = OperationLogStore.Load(session);
+        operationLog.Append("Verify", report.Healthy
+            ? $"Verification passed: {report.DocumentsChecked} document(s) checked."
+            : $"Verification found issues: {report.Corrupt.Count} corrupt, {report.Missing.Count} missing, {report.Unexpected.Count} unexpected.");
+        OperationLogStore.Save(session, operationLog);
+
         return report.Healthy ? 0 : 2;
     }
 }

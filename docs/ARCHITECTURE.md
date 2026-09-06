@@ -80,6 +80,22 @@ drive marker:        .emergency-archive-drive.json refreshed on every update
   <v2> …` compares several with a single password prompt.
 - The Setup dashboard shows the archive revision (spec section 12/17).
 
+### Operational log (Phase 4/§20 — implemented)
+
+```text
+every operation → OperationLog.Append(category, message)
+   ├─ shown live: Setup Mode "Activity log" (newest first)
+   └─ persisted: logs/operations.log, encrypted inside the vault (spec §20)
+```
+
+- Bounded to the newest 500 entries; written through the same staged
+  encrypted-file pipeline as documents.
+- Red lines (spec §20): no passwords, no key material, no extracted document
+  text, no raw search queries — events only ("Update committed: version …",
+  "Search performed: 3 result(s)", "Document opened on host: …" with the
+  host-trace caveat).
+- VaultCli writes the same log for update/verify runs.
+
 ### Search (Phase 2 — implemented)
 
 ```text

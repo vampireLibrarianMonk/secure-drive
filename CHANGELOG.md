@@ -26,6 +26,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Windows and Linux (UI + VaultCli) and the `START-LINUX` launcher. The full
   suite passes on real Linux; clean-container builds caught and fixed latent
   Windows-only incremental-build defects.
+- **Operational logging + activity view** (spec §20): every operation
+  (unlock/lock, update commit, verify, index rebuild, source changes,
+  password change, open/export) is recorded in a bounded (500-entry) log
+  persisted **encrypted inside the vault** (`logs/operations.log`) and shown
+  live in Setup Mode's activity list. Red lines enforced: no passwords, no
+  key material, no raw search queries in the log. VaultCli writes the same
+  log.
 - **Phase 4 — Administration / Setup Mode**: an owner-only dashboard after
   unlock (documents, archive size, free drive space, archive version, last
   update, integrity status), source management via folder picker (spec §13),

@@ -14,7 +14,8 @@ namespace EmergencyArchive.UI;
 /// Setup Mode (spec section 12): archive health dashboard, source management,
 /// update, verify, index rebuild, password change, and recovery-instructions
 /// export. Reached only after normal authentication; the vault session stays
-/// owned by <see cref="MainWindowViewModel"/>.
+/// owned by <see cref="MainWindowViewModel"/>. Operational events are recorded
+/// in the shared encrypted log (spec section 20) and shown as an activity list.
 /// </summary>
 public sealed partial class SetupViewModel : ObservableObject
 {
@@ -22,17 +23,44 @@ public sealed partial class SetupViewModel : ObservableObject
     private readonly string vaultPath;
     private readonly Func<VaultSearchIndex?> getIndex;
     private readonly Action<VaultSearchIndex?> setIndex;
+    private readonly OperationLog operationLog;
 
     public const string RecoveryInstructionsFileName = "RECOVERY-INSTRUCTIONS.txt";
 
-    public SetupViewModel(VaultSession session, string vaultPath, Func<VaultSearchIndex?> getIndex, Action<VaultSearchIndex?> setIndex)
+    public SetupViewModel(VaultSession session, string vaultPath, OperationLog operationLog, Func<VaultSearchIndex?> getIndex, Action<VaultSearchIndex?> setIndex)
     {
         this.session = session;
         this.vaultPath = vaultPath;
+        this.operationLog = operationLog;
         this.getIndex = getIndex;
         this.setIndex = setIndex;
         RefreshDashboard();
         ReloadSources();
+        ReloadActivity();
+    }
+
+    // --- Activity log (spec section 20) --------------------------------------
+
+    public ObservableCollection<OperationLogEntry> ActivityEntries { get; } = new();
+
+    private void ReloadActivity()
+    {
+        ActivityEntries.Clear();
+        foreach (OperationLogEntry entry in operationLog.NewestFirst)
+        {
+            ActivityEntries.Add(entry);
+        }
+    }
+
+    private void RecordActivity(string category, string message)
+    {
+        operationLog.Append(category, message);
+        if (session is not null)
+        {
+            OperationLogStore.Save(session, operationLog);
+        }
+
+        ReloadActivity();
     }
 
     // --- Dashboard ----------------------------------------------------------

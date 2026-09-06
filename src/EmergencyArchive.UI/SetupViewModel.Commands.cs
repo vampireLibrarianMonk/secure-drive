@@ -64,6 +64,9 @@ public sealed partial class SetupViewModel
 
             RefreshDashboard();
             OnDocumentsChanged();
+            RecordActivity("Update", report.NoChanges
+                ? $"No changes (version {report.ArchiveVersion})."
+                : $"Update committed: version {report.ArchiveVersion} — added {report.Plan.Added.Count}, changed {report.Plan.Changed.Count}, removed {report.Plan.Deleted.Count}.");
             SetupStatus = report.NoChanges
                 ? $"Archive is up to date (version {report.ArchiveVersion})."
                 : $"Update committed: version {report.ArchiveVersion} — added {report.Plan.Added.Count}, changed {report.Plan.Changed.Count}, removed {report.Plan.Deleted.Count}. Run VERIFY ARCHIVE for a full check.";
@@ -71,6 +74,7 @@ public sealed partial class SetupViewModel
         catch (Exception e) when (e is VaultException or DirectoryNotFoundException or InvalidOperationException)
         {
             SetupStatus = $"Update failed: {e.Message}";
+            RecordActivity("Update", $"Update failed: {e.Message}");
         }
         finally
         {

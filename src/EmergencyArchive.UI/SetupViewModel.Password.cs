@@ -32,6 +32,7 @@ public sealed partial class SetupViewModel
             await Task.Run(() => session.ChangePassword(newPassword));
             NewPassword = null;
             ConfirmNewPassword = null;
+            RecordActivity("Security", "Password changed (this replica).");
             SetupStatus = "Password changed. Remember to change it on every replica, and update stored copies of the password.";
         }
         catch (ArgumentException e)

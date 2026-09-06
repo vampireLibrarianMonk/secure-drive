@@ -23,6 +23,7 @@ public partial class MainWindowViewModel : ObservableObject
     private string? vaultPath;
     private string? openTempDirectory;
     private SetupViewModel? setup;
+    private OperationLog? operationLog;
 
     public const string ReadyMessage = "Enter the archive password to continue.";
     public const string UnlockingMessage = "Unlocking archive… (deriving the key takes a moment)";
@@ -121,6 +122,9 @@ public partial class MainWindowViewModel : ObservableObject
             VaultSession opened = await Task.Run(() => VaultStore.Unlock(locatedVaultPath, password));
             session = opened;
             vaultPath = locatedVaultPath;
+            operationLog = OperationLogStore.Load(session);
+            operationLog.Append("Vault", "Archive unlocked.");
+            OperationLogStore.Save(session, operationLog);
             LoadDocuments();
             IsUnlocked = true;
             StatusMessage = UnlockedMessage;
@@ -165,6 +169,13 @@ public partial class MainWindowViewModel : ObservableObject
         foreach (SearchResultItem result in results)
         {
             FilteredDocuments.Add(new DocumentItemViewModel(result.RelativePath) { Snippet = result.Snippet });
+        }
+
+        // Spec section 20: log the event, not the query text.
+        operationLog?.Append("Search", $"Search performed: {results.Count} result(s).");
+        if (session is not null && operationLog is not null)
+        {
+            OperationLogStore.Save(session, operationLog);
         }
 
         StatusMessage = results.Count == 0
@@ -226,6 +237,7 @@ public partial class MainWindowViewModel : ObservableObject
         var setupViewModel = new SetupViewModel(
             session,
             vaultPath!,
+            operationLog!,
             () => searchIndex,
             newIndex => searchIndex = newIndex);
         setupViewModel.DocumentsChanged += (_, _) => Dispatcher.UIThread.Post(LoadDocuments);
@@ -252,12 +264,19 @@ public partial class MainWindowViewModel : ObservableObject
     public void Lock()
     {
         IsSetupMode = false;
+        setup = null;
         CleanupTempExports();
+        operationLog?.Append("Vault", "Archive locked.");
+        if (session is not null && operationLog is not null)
+        {
+            OperationLogStore.Save(session, operationLog);
+        }
+
         session?.Dispose();
         session = null;
         searchIndex?.Dispose();
         searchIndex = null;
-        setup = null;
+        operationLog = null;
         Documents.Clear();
         FilteredDocuments.Clear();
         SelectedDocument = null;
@@ -291,6 +310,21 @@ public partial class MainWindowViewModel : ObservableObject
     public void NoteExternalOpen(string name)
     {
         StatusMessage = $"Opened '{name}'. Opening a document can leave traces on this computer (temporary files, recent-file lists).";
+        operationLog?.Append("Documents", $"Document opened on host: {name} (may leave traces on this computer).");
+        if (session is not null && operationLog is not null)
+        {
+            OperationLogStore.Save(session, operationLog);
+        }
+    }
+
+    /// <summary>Spec section 11: export events are recorded (the log itself is encrypted).</summary>
+    public void NoteExport(string name)
+    {
+        operationLog?.Append("Documents", $"Document exported: {name}.");
+        if (session is not null && operationLog is not null)
+        {
+            OperationLogStore.Save(session, operationLog);
+        }
     }
 
     // --- Internals ----------------------------------------------------------

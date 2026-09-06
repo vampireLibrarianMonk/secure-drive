@@ -32,6 +32,7 @@ public sealed partial class SetupViewModel
         SourceConfiguration configuration = CurrentSources().WithSource(new SourceDirectory(Path.GetFullPath(path)));
         SourceConfigStore.Save(session, configuration);
         RefreshDashboard();
+        RecordActivity("Sources", $"Source added: {configuration.Sources.Last().EffectiveAlias} ({Path.GetFullPath(path)}).");
         SetupStatus = $"Source added: {configuration.Sources.Last().EffectiveAlias}. Run UPDATE ARCHIVE to import its documents.";
     }
 
@@ -43,10 +44,12 @@ public sealed partial class SetupViewModel
             return;
         }
 
-        SourceConfiguration configuration = CurrentSources().WithoutSource(SelectedSource.Alias);
+        string removedAlias = SelectedSource.Alias;
+        SourceConfiguration configuration = CurrentSources().WithoutSource(removedAlias);
         SourceConfigStore.Save(session, configuration);
         SelectedSource = null;
         RefreshDashboard();
+        RecordActivity("Sources", $"Source removed: {removedAlias}.");
         SetupStatus = "Source removed. Run UPDATE ARCHIVE to apply (deleted source files will be removed from the archive).";
     }
 
@@ -61,6 +64,7 @@ public sealed partial class SetupViewModel
 
         Directory.CreateDirectory(Path.GetDirectoryName(target)!);
         File.WriteAllText(target, RecoveryInstructionsText, Encoding.UTF8);
+        RecordActivity("Recovery", $"Recovery instructions exported to {target}.");
         SetupStatus = $"Recovery instructions exported to {target}";
     }
 

@@ -33,6 +33,9 @@ public sealed partial class SetupViewModel
             IntegrityStatus = report.Healthy
                 ? $"HEALTHY — {report.DocumentsChecked} document(s), {ArchiveDashboardSnapshot.FormatBytes(report.BytesChecked)} verified."
                 : $"ISSUES: {report.Corrupt.Count} corrupt, {report.Missing.Count} missing, {report.Unexpected.Count} unexpected, {report.IndexStaleEntries} stale index entries. Do not modify this drive.";
+            RecordActivity("Verify", report.Healthy
+                ? $"Verification passed: {report.DocumentsChecked} document(s) checked."
+                : $"Verification found issues: {report.Corrupt.Count} corrupt, {report.Missing.Count} missing, {report.Unexpected.Count} unexpected.");
         }
         catch (Exception e) when (e is VaultException or IOException)
         {
@@ -56,6 +59,7 @@ public sealed partial class SetupViewModel
 
             VaultSearchIndex rebuilt = await Task.Run(() => VaultSearchIndex.Build(session));
             setIndex(rebuilt);
+            RecordActivity("Index", $"Search index rebuilt ({rebuilt.DocumentCount} document(s) indexed).");
             SetupStatus = $"Search index rebuilt ({rebuilt.DocumentCount} document(s) indexed).";
         }
         catch (VaultException e)
