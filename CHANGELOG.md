@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Phase 7 hardening** (spec §28): secret scanner (`scripts/scan-secrets.ps1`
+  — clean), dependency audit (zero vulnerable packages incl. transitive),
+  hardening checklist mapping every §28 item to its implementation
+  (docs/HARDENING.md); corruption/interruption/recovery tests were already in
+  place from Phases 2-3.
 - **Phase 6 — Replica management** (spec §17): monotonic manifest revisions +
   content hashes enable objective replica comparison (in-sync / newer /
   diverged / different archives); `ReplicaInspector`/`ReplicaComparer` in
