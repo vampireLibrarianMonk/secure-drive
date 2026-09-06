@@ -15,9 +15,10 @@ public class Fts5QueryTests
     }
 
     [Fact]
-    public void Sanitize_WrapsEachTermInQuotes()
+    public void Sanitize_WrapsEachTermInPrefixQueries()
     {
-        Assert.Equal("\"home\" \"insurance\"", Fts5Query.Sanitize("home insurance"));
+        // Each term is a quoted prefix query: partial words match (spec §26).
+        Assert.Equal("\"home\"* \"insurance\"*", Fts5Query.Sanitize("home insurance"));
     }
 
     [Fact]
@@ -25,7 +26,7 @@ public class Fts5QueryTests
     {
         // "say \"hello\"" splits into two terms; the embedded quotes of the
         // second term are doubled inside its quoted phrase.
-        Assert.Equal("\"say\" \"\"\"hello\"\"\"", Fts5Query.Sanitize("say \"hello\""));
+        Assert.Equal("\"say\"* \"\"\"hello\"\"\"*", Fts5Query.Sanitize("say \"hello\""));
     }
 
     [Fact]
@@ -34,18 +35,18 @@ public class Fts5QueryTests
         // Operators and column filters must be treated as plain text.
         string result = Fts5Query.Sanitize("NEAR(a b) OR passport:*");
 
-        Assert.Equal("\"NEAR(a\" \"b)\" \"OR\" \"passport:*\"", result);
+        Assert.Equal("\"NEAR(a\"* \"b)\"* \"OR\"* \"passport:*\"*", result);
     }
 
     [Fact]
     public void Sanitize_HandlesUnicode()
     {
-        Assert.Equal("\"josé's\" \"证件\"", Fts5Query.Sanitize("josé's 证件"));
+        Assert.Equal("\"josé's\"* \"证件\"*", Fts5Query.Sanitize("josé's 证件"));
     }
 
     [Fact]
     public void Sanitize_CollapsesWhitespace()
     {
-        Assert.Equal("\"one\" \"two\"", Fts5Query.Sanitize("  one \t two  "));
+        Assert.Equal("\"one\"* \"two\"*", Fts5Query.Sanitize("  one \t two  "));
     }
 }

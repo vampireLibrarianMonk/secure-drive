@@ -18,7 +18,7 @@ Status: living document for the Phase 0 scaffold. Update with each phase.
 | `EmergencyArchive.UI` | Avalonia front-end: Emergency Mode (read-only search) and Setup Mode |
 | `EmergencyArchive.Core` | Domain model: archive identity/versioning, categories, shared abstractions |
 | `EmergencyArchive.Crypto` | Vault integration + password policy; delegates to established formats |
-| `EmergencyArchive.Search` | SQLite/FTS5 index and query building (index lives inside the vault, spec §9) |
+| `EmergencyArchive.Search` | FTS5 index (in-memory SQLite while unlocked, persisted encrypted inside the vault), document text extraction (PDF/TXT/MD/DOCX/XLSX/PPTX/HTML), safe query building. Composes Crypto (index persistence) and Integrity (hashing). |
 | `EmergencyArchive.Sync` | Source scanning, change detection, transactional update staging (spec §14) |
 | `EmergencyArchive.Integrity` | SHA-256, manifest, and archive verification (spec §15–16) |
 
@@ -27,15 +27,36 @@ nothing in the solution.
 
 ## Key flows
 
-### Unlock (Phase 1)
+### Search (Phase 2 — implemented)
 
 ```text
-Launch → single password prompt → KDF/vault unlock → open vault
-       → open (in-vault) SQLite index → Search UI (read-only)
+unlock → index file present in vault?
+   ├─ yes → decrypt index rows → in-memory SQLite → rebuild FTS5 → ready
+   └─ no  → extract text per document (PDF/TXT/MD/DOCX/XLSX/PPTX/HTML)
+            → hash (SHA-256) → store rows → rebuild FTS5 → encrypt & persist
+query → Fts5Query.Sanitize (quoted prefix terms) → FTS5 MATCH
+      → results with snippets, ordered by rank
+```
+
+- The plaintext index exists ONLY in memory while unlocked; the persisted
+  index is a single encrypted vault file `index/search.index` (spec §9).
+- A damaged index file is silently rebuilt from the documents — the index is
+  disposable, documents are authoritative (spec §24).
+- Text extraction is best-effort and capped; unreadable documents are indexed
+  by name only. Categories default to the top-level folder (spec §10).
+
+### Unlock (Phase 1/2 — implemented)
+
+```text
+Launch → single password prompt (5 s interval between attempts, spec §19)
+       → scrypt KEK → AES-KW unwrap masterkeys → verify signed vault config
+       → open vault → list documents (decrypted names)
+       → load/build FTS5 search index in memory → Search UI (read-only)
 ```
 
 One password, once (spec §5). Emergency Mode is read-only (spec §22); all
-mutation happens in Setup Mode.
+mutation happens in Setup Mode. OPEN exports a decrypted copy to a per-session
+temp folder (removed on lock) and warns about host traces (spec §11/§23).
 
 ### Update (Phase 3, spec §14)
 

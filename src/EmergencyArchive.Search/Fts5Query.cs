@@ -14,6 +14,11 @@ namespace EmergencyArchive.Search;
 public static class Fts5Query
 {
     /// <summary>Converts raw user input into a quoted-terms MATCH expression. Empty input yields an empty string.</summary>
+    /// <remarks>
+    /// Each term becomes a quoted prefix query (<c>"term"*</c>): partial words
+    /// match (spec section 26 — partial filename search) while all FTS5 syntax
+    /// characters stay inert. Adjacent terms are implicitly AND-ed.
+    /// </remarks>
     public static string Sanitize(string? input)
     {
         if (string.IsNullOrWhiteSpace(input))
@@ -31,7 +36,7 @@ public static class Fts5Query
                 expression.Append(' ');
             }
 
-            expression.Append('"').Append(terms[i].Replace("\"", "\"\"")).Append('"');
+            expression.Append('"').Append(terms[i].Replace("\"", "\"\"")).Append("\"*");
         }
 
         return expression.ToString();

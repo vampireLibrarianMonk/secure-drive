@@ -143,6 +143,16 @@ public sealed partial class VaultSession : IDisposable
         return File.Exists(LocateFileOrNull(parent.Dir, parent.DirId, segments[^1]) ?? string.Empty);
     }
 
+    /// <summary>Returns the last write time (UTC) of a stored file's encrypted form (spec section 8 metadata).</summary>
+    public DateTimeOffset GetLastWriteTimeUtc(string cleartextRelativePath)
+    {
+        ThrowIfDisposed();
+        string[] segments = SplitPath(cleartextRelativePath);
+        (string ciphertextDir, string dirId) = ResolveDirectory(segments.AsSpan(0, segments.Length - 1));
+        string path = LocateFile(ciphertextDir, dirId, segments[^1]);
+        return File.GetLastWriteTimeUtc(path);
+    }
+
     /// <summary>Creates a directory (and any missing parents) at a cleartext-relative path.</summary>
     public void CreateDirectory(string cleartextRelativeDir)
     {

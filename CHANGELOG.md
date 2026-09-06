@@ -9,16 +9,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Phase 1 — Minimum Viable Vault**: the emergency screen now unlocks a real
-  Cryptomator format 8 vault and shows the stored documents (name filter,
-  OPEN via the host application, EXPORT / COPY to an encrypted-file-aware
-  save dialog). LOCK (or closing the window) disposes the session, clears
-  key material, and removes the per-session plaintext working folder used by
-  OPEN, with the honest caveat that deletion is not forensic erasure.
+- **Phase 2 — Search**: SQLite + FTS5 index maintained entirely inside the
+  encrypted vault (in-memory while unlocked; persisted as one encrypted file
+  `index/search.index` — the plaintext index never touches disk, spec §9).
+- Document text extraction for PDF (PdfPig), TXT, Markdown, DOCX, XLSX, PPTX
+  (zip + hardened XML reader), and HTML; per-document extraction cap;
+  unreadable documents fall back to name-only indexing.
+- Search UI: search box (Enter / SEARCH button) over document names **and
+  contents** with result snippets; the index builds in the background after
+  unlock with progress feedback; a damaged index file is transparently
+  rebuilt (spec §24 — documents are authoritative, the index is disposable).
+- Search tests covering spec §26 behaviors (exact/partial filename, full-text
+  term, phrase, category filter, no result, unicode content), an extractor
+  suite including a programmatically constructed PDF, and an index-encryption
+  assertion (no plaintext in any physical file, spec §9).
+- **Phase 1 — Minimum Viable Vault**: the emergency screen unlocks a real
+  Cryptomator format 8 vault and shows the stored documents (OPEN via the
+  host application, EXPORT / COPY to a save dialog). LOCK (or closing the
+  window) disposes the session, clears key material, and removes the
+  per-session plaintext working folder used by OPEN, with the honest caveat
+  that deletion is not forensic erasure.
 - **5-second rate limit between password attempts** (spec §19):
   `AttemptRateLimiter` in Core, enforced by the UI with a visible countdown
-  after every attempt. Documented as a UI-level anti-hammering convenience,
-  not a security boundary (offline attacks target scrypt directly).
+  on every password entry path. Documented as a UI-level anti-hammering
+  convenience, not a security boundary (offline attacks target scrypt
+  directly).
 - `VaultLocator` — finds `vault\` per the spec §4 drive layout, with an
   `EMERGENCY_ARCHIVE_VAULT_PATH` development override (a path, not a secret).
 - `VaultCli` tool (interim until Setup Mode, Phase 4): create/list/put/get
@@ -39,12 +54,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   package management with transitive pinning, strict build settings
   (`TreatWarningsAsErrors`, nullable reference types, .NET analyzers).
 - Solution scaffold per specification §27: `src/` (UI, Core, Crypto, Search,
-  Sync, Integrity) and `tests/` (five xUnit projects) with Phase-0 domain
-  foundations (archive versioning, categories, password policy, FTS5 query
-  sanitization, SHA-256 hashing, sync plan model) and unit tests.
-- Minimal Avalonia UI shell implementing the emergency startup screen
-  (spec §7) with password field and unlock button (vault handshake pending
-  Phase 1).
+  Sync, Integrity), `tools/VaultCli`, and `tests/` (five xUnit projects) with
+  domain foundations (archive versioning, categories, password policy, FTS5
+  query sanitization, SHA-256 hashing, sync plan model) and unit tests.
 - SBOM pipeline: pinned CycloneDX .NET tool in the local tool manifest and
   `scripts/generate-sbom.ps1` producing CycloneDX JSON into `sbom/`.
 - Environment bootstrap script `scripts/setup-env.ps1` (SDK check, tool
@@ -52,9 +64,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - USB deployment script `scripts/new-usb.ps1` creating the spec §4 drive
   layout with safety checks (system-drive guard, no deletion, `-Force`
   confirmation for non-empty drives).
-- Documentation set: USER-GUIDE, ARCHITECTURE, CRYPTOGRAPHY (Phase 0 draft),
+- Documentation set: USER-GUIDE, ARCHITECTURE, CRYPTOGRAPHY (vault decision),
   THREAT-MODEL, RECOVERY, BUILD.
 - Prepared the ORICO USB drive (D:) layout: `app/`, `vault/`, `public/`,
-  `README.txt`, draft `public/RECOVERY-INSTRUCTIONS.txt`.
+  `README.txt`, `public/RECOVERY-INSTRUCTIONS.txt`.
 
 [Unreleased]: https://example.invalid/EmergencyArchive/compare/release-0.1.0...HEAD

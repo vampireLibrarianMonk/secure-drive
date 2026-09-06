@@ -32,10 +32,13 @@ password**, given to you by the archive owner.
 2. **Open the drive** in File Explorer and run **`START-WINDOWS.exe`**.
 3. **Type the archive password** into the single password field and press
    **UNLOCK**.
-4. **Search.** Type what you are looking for in plain words — for example
-   `home insurance` or `passport`. Results appear grouped by category
-   (Identity, Financial, Insurance, Property, Legal, Medical, Education,
-   Emergency, Family, Other).
+4. **Search.** Click into the search field and type words from the document —
+   its name **or its contents** are searched (for example `home insurance`
+   finds the policy even if only the document text contains those words).
+   Press **ENTER** or the **SEARCH** button. Matching documents appear with a
+   text excerpt; results are grouped by category folder (Identity, Financial,
+   Insurance, Property, Legal, Medical, Education, Emergency, Family, Other).
+   Clearing the search field and pressing ENTER again shows every document.
 5. **Open or export a document.** Select it and choose *Open* (opens with the
    computer's normal PDF/Office application) or *Export/Copy* to save a
    decrypted copy somewhere you choose (for example, the desktop or a printer).

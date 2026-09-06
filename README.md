@@ -11,12 +11,12 @@ no external database, no installation:
 > password, and immediately receives a simple searchable interface for locating
 > important documents.
 
-**Status: Phase 0 complete — architecture decided, vault layer implemented.**
-The repository, build, SBOM pipeline, USB layout, and the Cryptomator
-format 8 vault implementation (with 100+ passing tests) are in place; the
-search index and full emergency UI arrive in Phase 1–2. See
-[CHANGELOG.md](CHANGELOG.md) and [docs/CRYPTOGRAPHY.md](docs/CRYPTOGRAPHY.md)
-for the vault format decision.
+**Status: Phase 2 complete — encrypted vault + full-text search implemented.**
+Environment, build, SBOM pipeline, USB layout, the Cryptomator format 8 vault
+layer, and content search (SQLite + FTS5 inside the encrypted vault) are in
+place with 141 passing tests. Setup Mode and incremental archive updates
+arrive in Phase 3–4. See [CHANGELOG.md](CHANGELOG.md) and
+[docs/CRYPTOGRAPHY.md](docs/CRYPTOGRAPHY.md) for the vault format decision.
 
 The full design specification lives in
 [Emergency Archive — LLM IDE Design Specification.md](Emergency%20Archive%20%E2%80%94%20LLM%20IDE%20Design%20Specification.md).

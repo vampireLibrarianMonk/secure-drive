@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\EmergencyArchive.Core\EmergencyArchive.Core.csproj" />
+    <ProjectReference Include="..\EmergencyArchive.Search\EmergencyArchive.Search.csproj" />
   </ItemGroup>
 
 </Project>

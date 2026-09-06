@@ -16,6 +16,7 @@ public partial class MainWindowViewModel : ObservableObject
 {
     private readonly AttemptRateLimiter rateLimiter = new();
     private VaultSession? session;
+    private VaultSearchIndex? searchIndex;
     private string? openTempDirectory;
 
     public const string ReadyMessage = "Enter the archive password to continue.";
@@ -43,7 +44,13 @@ public partial class MainWindowViewModel : ObservableObject
 
     // --- Archive screen state -----------------------------------------------
 
-    [ObservableProperty] private bool isUnlocked;
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(SearchCommand))]
+    private bool isUnlocked;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(SearchCommand))]
+    private bool isIndexing;
 
     [ObservableProperty] private string? searchText;
 
@@ -58,6 +65,8 @@ public partial class MainWindowViewModel : ObservableObject
     public bool HasSelectedDocument => SelectedDocument is not null;
 
     private bool CanAttemptUnlock => !IsBusy && !IsCooldownActive && !string.IsNullOrEmpty(Password);
+
+    private bool CanSearch => IsUnlocked && !IsIndexing && searchIndex is not null;
 
     // --- Commands -----------------------------------------------------------
 
@@ -98,6 +107,7 @@ public partial class MainWindowViewModel : ObservableObject
             LoadDocuments();
             IsUnlocked = true;
             StatusMessage = UnlockedMessage;
+            _ = IndexInBackgroundAsync(); // search becomes available once the index is ready
         }
         catch (VaultUnlockException)
         {
@@ -115,6 +125,78 @@ public partial class MainWindowViewModel : ObservableObject
         }
     }
 
+    /// <summary>Full-text search over document names and contents (spec section 8). Empty query shows all documents.</summary>
+    [RelayCommand(CanExecute = nameof(CanSearch))]
+    private void Search()
+    {
+        string query = SearchText?.Trim() ?? string.Empty;
+        FilteredDocuments.Clear();
+        SelectedDocument = null;
+
+        if (query.Length == 0)
+        {
+            foreach (DocumentItemViewModel document in Documents)
+            {
+                FilteredDocuments.Add(document);
+            }
+
+            StatusMessage = $"Showing all {Documents.Count} document(s).";
+            return;
+        }
+
+        IReadOnlyList<SearchResultItem> results = searchIndex!.Search(query);
+        foreach (SearchResultItem result in results)
+        {
+            FilteredDocuments.Add(new DocumentItemViewModel(result.RelativePath) { Snippet = result.Snippet });
+        }
+
+        StatusMessage = results.Count == 0
+            ? $"No matches for '{query}'."
+            : $"{results.Count} matching document(s) for '{query}'.";
+    }
+
+    /// <summary>
+    /// Loads or builds the FTS5 index in the background. While indexing runs,
+    /// documents can still be browsed by name; search enables when ready.
+    /// </summary>
+    private async Task IndexInBackgroundAsync()
+    {
+        VaultSession? current = session;
+        if (current is null)
+        {
+            return;
+        }
+
+        IsIndexing = true;
+        try
+        {
+            var progress = new Progress<SearchIndexProgress>(p =>
+                StatusMessage = $"Preparing search index… {p.Processed}/{p.Total}: {p.CurrentName}");
+            VaultSearchIndex index = await Task.Run(() => VaultSearchIndex.LoadOrBuild(current, progress));
+
+            if (!ReferenceEquals(session, current))
+            {
+                index.Dispose(); // the vault was locked while indexing
+                return;
+            }
+
+            searchIndex = index;
+            StatusMessage = $"Search ready — {index.DocumentCount} document(s) indexed.";
+        }
+        catch (Exception e) when (e is VaultException or ObjectDisposedException)
+        {
+            searchIndex = null;
+            if (IsUnlocked)
+            {
+                StatusMessage = "The search index could not be prepared. Documents can still be browsed by name.";
+            }
+        }
+        finally
+        {
+            IsIndexing = false;
+        }
+    }
+
     /// <summary>Locks the archive (also invoked when the window closes, spec section 21).</summary>
     [RelayCommand]
     private void Lock()
@@ -122,6 +204,8 @@ public partial class MainWindowViewModel : ObservableObject
         CleanupTempExports();
         session?.Dispose();
         session = null;
+        searchIndex?.Dispose();
+        searchIndex = null;
         Documents.Clear();
         FilteredDocuments.Clear();
         SelectedDocument = null;
