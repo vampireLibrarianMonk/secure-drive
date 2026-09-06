@@ -126,6 +126,8 @@
             <StackPanel Grid.Column="1" Spacing="2">
                 <TextBlock Text="Free drive space" FontSize="12" Opacity="0.7" />
                 <TextBlock Text="{Binding DriveFreeDisplay}" FontWeight="SemiBold" />
+                <TextBlock Text="Revision" FontSize="12" Opacity="0.7" Margin="0,6,0,0" />
+                <TextBlock Text="{Binding RevisionDisplay}" FontWeight="SemiBold" />
                 <TextBlock Text="Last update" FontSize="12" Opacity="0.7" Margin="0,6,0,0" />
                 <TextBlock Text="{Binding LastUpdateDisplay}" FontWeight="SemiBold" />
             </StackPanel>

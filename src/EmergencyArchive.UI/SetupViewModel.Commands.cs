@@ -22,6 +22,7 @@ public sealed partial class SetupViewModel
 
         ArchiveId = snapshot.ArchiveId;
         ArchiveVersion = snapshot.ArchiveVersion;
+        RevisionDisplay = $"#{snapshot.Revision}";
         DocumentCountDisplay = $"{snapshot.DocumentCount}";
         ArchiveSizeDisplay = snapshot.ArchiveSizeDisplay;
         DriveFreeDisplay = snapshot.DriveFreeDisplay;

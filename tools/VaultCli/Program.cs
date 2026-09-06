@@ -27,6 +27,8 @@ try
         "sources-add" => OwnerCommands.SourcesAdd(args, PromptPassword),
         "update" => OwnerCommands.Update(args, PromptPassword),
         "verify" => OwnerCommands.Verify(args, PromptPassword),
+        "replica" => OwnerCommands.Replica(args, PromptPassword),
+        "replicas" => OwnerCommands.Replicas(args, PromptPassword),
         _ => UnknownCommand(args[0]),
     };
 }
@@ -52,6 +54,8 @@ static void PrintUsage()
     Console.WriteLine("  VaultCli sources-add <vault-directory> <source-directory> [alias]");
     Console.WriteLine("  VaultCli update <vault-directory>");
     Console.WriteLine("  VaultCli verify <vault-directory>");
+    Console.WriteLine("  VaultCli replica <vault-directory>");
+    Console.WriteLine("  VaultCli replicas <vault1> <vault2> [vault3 …]");
 }
 
 static int UnknownCommand(string command)

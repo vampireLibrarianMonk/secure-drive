@@ -12,6 +12,7 @@ namespace EmergencyArchive.Sync;
 public sealed record ArchiveDashboardSnapshot(
     string ArchiveId,
     string ArchiveVersion,
+    long Revision,
     int DocumentCount,
     long TotalLogicalBytes,
     long DriveFreeBytes,
@@ -49,6 +50,7 @@ public static class ArchiveDashboard
         return new ArchiveDashboardSnapshot(
             ArchiveId: manifest?.ArchiveId ?? "EmergencyArchive",
             ArchiveVersion: manifest?.ArchiveVersion ?? "not committed",
+            Revision: manifest?.Revision ?? 0,
             DocumentCount: manifest?.DocumentCount ?? 0,
             TotalLogicalBytes: manifest?.TotalLogicalBytes ?? 0,
             DriveFreeBytes: freeBytes,

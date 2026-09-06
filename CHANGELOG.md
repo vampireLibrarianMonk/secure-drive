@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Phase 6 — Replica management** (spec §17): monotonic manifest revisions +
+  content hashes enable objective replica comparison (in-sync / newer /
+  diverged / different archives); `ReplicaInspector`/`ReplicaComparer` in
+  Sync, `VaultCli replica(s)` commands for multi-drive inspection, Setup
+  dashboard revision display, and automatic drive-marker refresh on update.
 - **Phase 5 — Linux support**: `scripts/test-linux.ps1` runs the entire test
   suite plus a self-contained-deployment smoke test inside Docker (Ubuntu
   .NET SDK image + a bare `ubuntu:24.04` runtime-less container);

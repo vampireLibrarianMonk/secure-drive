@@ -41,6 +41,8 @@ public sealed partial class SetupViewModel : ObservableObject
 
     [ObservableProperty] private string archiveVersion = "not committed";
 
+    [ObservableProperty] private string revisionDisplay = "—";
+
     [ObservableProperty] private string documentCountDisplay = "0";
 
     [ObservableProperty] private string archiveSizeDisplay = "0 B";

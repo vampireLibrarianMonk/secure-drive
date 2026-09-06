@@ -96,6 +96,14 @@ internal static partial class OwnerCommands
         Console.WriteLine($"Added {report.Plan.Added.Count}, changed {report.Plan.Changed.Count}, removed {report.Plan.Deleted.Count}.");
         Console.WriteLine($"Archive version {report.ArchiveVersion} committed: {report.DocumentCount} documents, {report.TotalLogicalBytes} bytes.");
 
+        // Refresh the drive marker so the drive label reflects the new state
+        // (spec section 17: replica identification).
+        ReplicaInfo replicaInfo = ReplicaInspector.Inspect(session, args[1]);
+        if (DriveMarker.TryRefresh(args[1], replicaInfo))
+        {
+            Console.WriteLine("Drive marker refreshed.");
+        }
+
         // Bring the search index along incrementally (added/changed/deleted).
         using VaultSearchIndex index = VaultSearchIndex.LoadOrBuild(session);
         index.ApplyChanges(session, report.Plan, report.Manifest);

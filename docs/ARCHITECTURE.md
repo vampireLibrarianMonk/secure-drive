@@ -62,6 +62,24 @@ The SETUP button (owner only, after unlock) opens the administration screen:
   write). Applies to this replica — repeat on every replica (spec §17).
 - Export recovery instructions: refreshes `public\RECOVERY-INSTRUCTIONS.txt`.
 
+### Replica management (Phase 6 — implemented)
+
+```text
+replica inspection:  vault + manifest → ArchiveId, version, revision,
+                     content hash (SHA-256 over sorted entries), counts
+comparison:          same ID? → newer / in-sync / diverged (same version,
+                     different content hash) / different archives
+drive marker:        .emergency-archive-drive.json refreshed on every update
+```
+
+- Every manifest commit increments a monotonic **revision** and carries a
+  **content hash**, so two drives of the same archive can be compared
+  objectively — including divergence detection when both were updated from
+  different sources at the same revision.
+- `VaultCli replica <vault>` inspects one drive; `VaultCli replicas <v1>
+  <v2> …` compares several with a single password prompt.
+- The Setup dashboard shows the archive revision (spec section 12/17).
+
 ### Search (Phase 2 — implemented)
 
 ```text
