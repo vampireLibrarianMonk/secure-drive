@@ -80,6 +80,20 @@ public partial class MainWindowViewModel : ObservableObject
 
     public ObservableCollection<DocumentItemViewModel> FilteredDocuments { get; } = new();
 
+    /// <summary>Folder sidebar: "All documents" plus one entry per top-level folder (spec section 10).</summary>
+    public ObservableCollection<CategoryItemViewModel> Categories { get; } = new();
+
+    [ObservableProperty]
+    private CategoryItemViewModel? selectedCategory;
+
+    /// <summary>One-line summary of what the list is showing (e.g. "Showing 12 of 2,950 documents").</summary>
+    [ObservableProperty]
+    private string? resultsSummary;
+
+    /// <summary>Search-index progress and outcome, shown beside the status line (not in it).</summary>
+    [ObservableProperty]
+    private string? indexStatusText;
+
     public bool HasSelectedDocument => SelectedDocument is not null;
 
     private bool CanAttemptUnlock => !IsBusy && !IsCooldownActive && !string.IsNullOrEmpty(Password);
@@ -167,9 +181,27 @@ public partial class MainWindowViewModel : ObservableObject
         }
 
         IReadOnlyList<SearchResultItem> results = searchIndex!.Search(query);
+        string? activeCategory = SelectedCategory is null || SelectedCategory.IsAll
+            ? null
+            : SelectedCategory.Name;
+
+        int shown = 0;
         foreach (SearchResultItem result in results)
         {
-            FilteredDocuments.Add(new DocumentItemViewModel(result.RelativePath) { Snippet = result.Snippet });
+            var item = new DocumentItemViewModel(result.RelativePath) { Snippet = result.Snippet };
+            if (activeCategory is not null &&
+                !string.Equals(item.Category, activeCategory, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            FilteredDocuments.Add(item);
+            shown++;
+        }
+
+        if (FilteredDocuments.Count > 0)
+        {
+            SelectedDocument = FilteredDocuments[0];
         }
 
         // Spec section 20: log the event, not the query text.
@@ -179,9 +211,9 @@ public partial class MainWindowViewModel : ObservableObject
             OperationLogStore.Save(session, operationLog);
         }
 
-        StatusMessage = results.Count == 0
-            ? $"No matches for '{query}'."
-            : $"{results.Count} matching document(s) for '{query}'.";
+        ResultsSummary = shown == results.Count
+            ? $"{results.Count:N0} content match(es) for \"{query}\""
+            : $"{shown:N0} of {results.Count:N0} content match(es) for \"{query}\" (folder filter active)";
     }
 
     /// <summary>
@@ -200,7 +232,7 @@ public partial class MainWindowViewModel : ObservableObject
         try
         {
             var progress = new Progress<SearchIndexProgress>(p =>
-                StatusMessage = $"Preparing search index… {p.Processed}/{p.Total}: {p.CurrentName}");
+                IndexStatusText = $"Preparing search index… {p.Processed:N0}/{p.Total:N0}");
             VaultSearchIndex index = await Task.Run(() => VaultSearchIndex.LoadOrBuild(current, progress));
 
             if (!ReferenceEquals(session, current))
@@ -210,14 +242,14 @@ public partial class MainWindowViewModel : ObservableObject
             }
 
             searchIndex = index;
-            StatusMessage = $"Search ready — {index.DocumentCount} document(s) indexed.";
+            IndexStatusText = $"Search ready — {index.DocumentCount:N0} indexed";
         }
         catch (Exception e) when (e is VaultException or ObjectDisposedException)
         {
             searchIndex = null;
             if (IsUnlocked)
             {
-                StatusMessage = "The search index could not be prepared. Documents can still be browsed by name.";
+                IndexStatusText = "Search unavailable — documents can still be browsed by name.";
             }
         }
         finally
@@ -280,6 +312,10 @@ public partial class MainWindowViewModel : ObservableObject
         operationLog = null;
         Documents.Clear();
         FilteredDocuments.Clear();
+        Categories.Clear();
+        SelectedCategory = null;
+        ResultsSummary = null;
+        IndexStatusText = null;
         SelectedDocument = null;
         SearchText = null;
         IsUnlocked = false;
@@ -338,22 +374,62 @@ public partial class MainWindowViewModel : ObservableObject
             Documents.Add(new DocumentItemViewModel(path));
         }
 
+        RebuildCategories();
         ApplyFilter();
     }
 
     partial void OnSearchTextChanged(string? value) => ApplyFilter();
 
+    partial void OnSelectedCategoryChanged(CategoryItemViewModel? value) => ApplyFilter();
+
+    /// <summary>Rebuilds the folder sidebar, preserving the active folder when possible.</summary>
+    private void RebuildCategories()
+    {
+        string? previous = SelectedCategory?.Name;
+        Categories.Clear();
+
+        Categories.Add(new CategoryItemViewModel(CategoryItemViewModel.AllName, Documents.Count));
+        foreach (var group in Documents
+            .GroupBy(d => d.Category, StringComparer.OrdinalIgnoreCase)
+            .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase))
+        {
+            Categories.Add(new CategoryItemViewModel(group.Key, group.Count()));
+        }
+
+        SelectedCategory = Categories.FirstOrDefault(c => c.Name == previous) ?? Categories[0];
+    }
+
     private void ApplyFilter()
     {
         string? term = SearchText?.Trim();
+        string? category = SelectedCategory is null || SelectedCategory.IsAll
+            ? null
+            : SelectedCategory.Name;
+
         FilteredDocuments.Clear();
+        int shown = 0;
         foreach (DocumentItemViewModel document in Documents)
         {
-            if (string.IsNullOrEmpty(term) || document.Name.Contains(term, StringComparison.OrdinalIgnoreCase))
+            if (category is not null &&
+                !string.Equals(document.Category, category, StringComparison.OrdinalIgnoreCase))
             {
-                FilteredDocuments.Add(document);
+                continue;
             }
+
+            if (!string.IsNullOrEmpty(term) &&
+                !document.Name.Contains(term, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            FilteredDocuments.Add(document);
+            shown++;
         }
+
+        SelectedDocument = FilteredDocuments.Count > 0 ? FilteredDocuments[0] : null;
+        ResultsSummary = term is null && category is null
+            ? $"{Documents.Count:N0} document(s)"
+            : $"Showing {shown:N0} of {Documents.Count:N0} document(s)";
     }
 
     private async Task RunCooldownAsync(TimeSpan remaining)

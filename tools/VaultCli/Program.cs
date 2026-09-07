@@ -8,11 +8,26 @@ using VaultCli;
 //   VaultCli put    <vault-directory> <relative-path> <source-file>
 //   VaultCli get    <vault-directory> <relative-path> <destination-file>
 // Passwords are prompted (never passed via command line, spec section 19).
+// Scripts/tests may use --password-stdin to supply the password(s) on stdin.
 
 if (args.Length == 0)
 {
     PrintUsage();
     return 1;
+}
+
+// --password-stdin: read the password(s) from standard input instead of the
+// masked interactive prompt. Commands needing two passwords (create) read two lines.
+string? stdinPassword = null;
+if (args.Contains("--password-stdin"))
+{
+    args = args.Where(a => a != "--password-stdin").ToArray();
+    stdinPassword = Console.ReadLine();
+    if (string.IsNullOrEmpty(stdinPassword))
+    {
+        Console.Error.WriteLine("No password received on standard input.");
+        return 1;
+    }
 }
 
 try
@@ -29,6 +44,7 @@ try
         "verify" => OwnerCommands.Verify(args, PromptPassword),
         "replica" => OwnerCommands.Replica(args, PromptPassword),
         "replicas" => OwnerCommands.Replicas(args, PromptPassword),
+        "probe" => OwnerCommands.Probe(args),
         _ => UnknownCommand(args[0]),
     };
 }
@@ -56,6 +72,8 @@ static void PrintUsage()
     Console.WriteLine("  VaultCli verify <vault-directory>");
     Console.WriteLine("  VaultCli replica <vault-directory>");
     Console.WriteLine("  VaultCli replicas <vault1> <vault2> [vault3 …]");
+    Console.WriteLine("  VaultCli probe <file>   (text-extraction diagnostic, no vault)");
+    Console.WriteLine("  Add --password-stdin to supply the password on standard input (scripts).");
 }
 
 static int UnknownCommand(string command)
@@ -65,7 +83,7 @@ static int UnknownCommand(string command)
     return 1;
 }
 
-static int DoCreate(string[] args)
+int DoCreate(string[] args)
 {
     if (args.Length != 2)
     {
@@ -86,7 +104,7 @@ static int DoCreate(string[] args)
     return 0;
 }
 
-static int DoList(string[] args)
+int DoList(string[] args)
 {
     if (args.Length != 2)
     {
@@ -104,7 +122,7 @@ static int DoList(string[] args)
     return 0;
 }
 
-static int DoPut(string[] args)
+int DoPut(string[] args)
 {
     if (args.Length != 4)
     {
@@ -119,7 +137,7 @@ static int DoPut(string[] args)
     return 0;
 }
 
-static int DoGet(string[] args)
+int DoGet(string[] args)
 {
     if (args.Length != 4)
     {
@@ -133,8 +151,15 @@ static int DoGet(string[] args)
     return 0;
 }
 
-static string PromptPassword(string label)
+string PromptPassword(string label)
 {
+    if (stdinPassword is not null)
+    {
+        string value = stdinPassword;
+        stdinPassword = Console.ReadLine(); // commands with a second prompt (create) read the next line
+        return value;
+    }
+
     Console.Write(label);
     var password = new StringBuilder();
     while (true)

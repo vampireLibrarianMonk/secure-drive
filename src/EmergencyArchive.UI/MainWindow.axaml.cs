@@ -3,6 +3,7 @@ using System.IO;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 
 namespace EmergencyArchive.UI;
 
@@ -12,11 +13,40 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         Closed += (_, _) => ViewModel.Lock();
+        Opened += (_, _) => FocusPasswordBox();
+
+        // When the archive locks (button or window close), put the caret back
+        // into the password box so the next attempt can start immediately.
+        DataContextChanged += (_, _) =>
+        {
+            if (DataContext is MainWindowViewModel vm)
+            {
+                vm.PropertyChanged += (_, e) =>
+                {
+                    if (e.PropertyName == nameof(MainWindowViewModel.IsUnlocked) && !vm.IsUnlocked)
+                    {
+                        Dispatcher.UIThread.Post(FocusPasswordBox);
+                    }
+                };
+            }
+        };
     }
 
     private MainWindowViewModel ViewModel => (MainWindowViewModel)DataContext!;
 
-    private async void OnOpenClicked(object? sender, RoutedEventArgs e)
+    private void FocusPasswordBox() => PasswordBox.Focus();
+
+    private void OnOpenClicked(object? sender, RoutedEventArgs e) => OpenSelectedDocument();
+
+    private void OnDocumentDoubleTapped(object? sender, Avalonia.Input.TappedEventArgs e)
+    {
+        if (ViewModel.SelectedDocument is not null)
+        {
+            OpenSelectedDocument();
+        }
+    }
+
+    private void OpenSelectedDocument()
     {
         DocumentItemViewModel? document = ViewModel.SelectedDocument;
         if (document is null)
@@ -24,12 +54,19 @@ public partial class MainWindow : Window
             return;
         }
 
-        string tempDirectory = ViewModel.EnsureOpenTempDirectory();
-        string targetPath = Path.Combine(tempDirectory, document.Name);
-        ViewModel.ExportDocumentTo(document.RelativePath, targetPath);
-        ViewModel.NoteExternalOpen(document.Name);
+        try
+        {
+            string tempDirectory = ViewModel.EnsureOpenTempDirectory();
+            string targetPath = Path.Combine(tempDirectory, document.Name);
+            ViewModel.ExportDocumentTo(document.RelativePath, targetPath);
+            ViewModel.NoteExternalOpen(document.Name);
 
-        Process.Start(new ProcessStartInfo(targetPath) { UseShellExecute = true });
+            Process.Start(new ProcessStartInfo(targetPath) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            ViewModel.StatusMessage = $"Could not open '{document.Name}': {ex.Message}";
+        }
     }
 
     private async void OnExportClicked(object? sender, RoutedEventArgs e)
@@ -57,9 +94,17 @@ public partial class MainWindow : Window
             return;
         }
 
-        await using var target = await file.OpenWriteAsync();
-        ViewModel.ExportDocumentTo(document.RelativePath, target);
-        ViewModel.StatusMessage = $"Exported '{document.Name}'. Remember where you saved it — the copy is NOT encrypted.";
+        try
+        {
+            await using var target = await file.OpenWriteAsync();
+            ViewModel.ExportDocumentTo(document.RelativePath, target);
+            ViewModel.NoteExport(document.Name);
+            ViewModel.StatusMessage = $"Exported '{document.Name}'. Remember where you saved it — the copy is NOT encrypted.";
+        }
+        catch (Exception ex)
+        {
+            ViewModel.StatusMessage = $"Could not export '{document.Name}': {ex.Message}";
+        }
     }
 
     private async void OnAddSourceClicked(object? sender, RoutedEventArgs e)

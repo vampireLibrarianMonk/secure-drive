@@ -5,194 +5,285 @@
         x:Class="EmergencyArchive.UI.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="EMERGENCY ARCHIVE"
-        Width="780" Height="560"
+        Width="1040" Height="700"
+        MinWidth="860" MinHeight="580"
         WindowStartupLocation="CenterScreen">
 
     <Design.DataContext>
         <vm:MainWindowViewModel />
     </Design.DataContext>
 
-    <!-- Password screen (spec section 7) -->
     <Panel>
-    <StackPanel IsVisible="{Binding !IsUnlocked}"
+    <!-- Password screen (spec section 7) -->
+    <Grid IsVisible="{Binding !IsUnlocked}">
+        <Border Width="540"
+                Padding="44,40"
+                CornerRadius="10"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
-                Spacing="14"
-                Margin="40,0">
-        <TextBlock Text="EMERGENCY ARCHIVE"
-                   FontSize="28"
-                   FontWeight="SemiBold"
-                   HorizontalAlignment="Center" />
+                Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                BorderThickness="1">
+            <StackPanel Spacing="6">
+                <TextBlock Text="EMERGENCY ARCHIVE"
+                           FontSize="30" FontWeight="SemiBold"
+                           HorizontalAlignment="Center" />
+                <TextBlock Text="Read-only access to your saved documents"
+                           FontSize="13" Opacity="0.75"
+                           HorizontalAlignment="Center"
+                           Margin="0,2,0,22" />
 
-        <TextBlock Text="Password" FontSize="14" Margin="0,16,0,0" />
+                <TextBlock Text="Password" FontSize="13" Opacity="0.8" />
+                <TextBox x:Name="PasswordBox"
+                         PasswordChar="&#x2022;"
+                         Text="{Binding Password}"
+                         Watermark="Enter the archive password"
+                         FontSize="16" Height="40">
+                    <TextBox.KeyBindings>
+                        <KeyBinding Gesture="Enter" Command="{Binding UnlockCommand}" />
+                    </TextBox.KeyBindings>
+                </TextBox>
 
-        <TextBox PasswordChar="&#x2022;"
-                 Text="{Binding Password}"
-                 Watermark="Archive password"
-                 FontSize="16"
-                 Width="420" />
+                <Button Content="UNLOCK"
+                        Command="{Binding UnlockCommand}"
+                        Height="44" FontSize="16" FontWeight="SemiBold"
+                        HorizontalAlignment="Stretch"
+                        Margin="0,16,0,0" />
 
-        <Button Content="UNLOCK"
-                Command="{Binding UnlockCommand}"
-                HorizontalAlignment="Center"
-                Padding="32,10"
-                FontSize="16"
-                Margin="0,10,0,0" />
+                <TextBlock Text="{Binding StatusMessage}"
+                           TextWrapping="Wrap" TextAlignment="Center"
+                           Opacity="0.85"
+                           Margin="0,18,0,0" />
+            </StackPanel>
+        </Border>
 
-        <TextBlock Text="{Binding StatusMessage}"
-                   TextWrapping="Wrap"
-                   TextAlignment="Center"
-                   Opacity="0.85"
-                   Width="460"
-                   Margin="0,14,0,0" />
-    </StackPanel>
+        <TextBlock Text="If you found this USB drive: start with the instructions in RECOVERY-INSTRUCTIONS.txt at the top of the drive."
+                   FontSize="11" Opacity="0.55"
+                   TextWrapping="Wrap" TextAlignment="Center"
+                   HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                   Margin="24,0,24,14" MaxWidth="760" />
+    </Grid>
 
     <!-- Archive screen (read-only, spec sections 7/11/22) -->
-    <Grid IsVisible="{Binding IsBrowsing}" Margin="16"
+    <Grid IsVisible="{Binding IsBrowsing}"
+          Margin="14,10,14,8"
           RowDefinitions="Auto,Auto,*,Auto,Auto">
+
+        <!-- Header -->
         <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
             <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                 <TextBlock Text="EMERGENCY ARCHIVE" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center" />
-                <TextBlock Text="READ ONLY" FontSize="13" VerticalAlignment="Center" Opacity="0.7" />
+                <Border CornerRadius="4" Padding="8,3"
+                        Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        VerticalAlignment="Center">
+                    <TextBlock Text="READ ONLY" FontSize="11" FontWeight="SemiBold" Opacity="0.85" />
+                </Border>
             </StackPanel>
             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
                 <Button Content="SETUP" Command="{Binding EnterSetupCommand}" Padding="16,6" />
-                <Button Content="LOCK" Command="{Binding LockCommand}" Padding="22,6" />
+                <Button Content="LOCK" Command="{Binding LockCommand}" Padding="24,6" FontWeight="SemiBold" />
             </StackPanel>
         </Grid>
 
+        <!-- Search: as-you-type filters by name; Enter searches inside documents -->
         <Grid Grid.Row="1" ColumnDefinitions="*,Auto" Margin="0,10,0,0">
-            <TextBox Watermark="Search documents (Enter) or filter by name"
-                     Text="{Binding SearchText}">
+            <TextBox Watermark="Type to filter by name — press Enter to search inside the documents"
+                     Text="{Binding SearchText}" FontSize="14" Height="34">
                 <TextBox.KeyBindings>
                     <KeyBinding Gesture="Enter" Command="{Binding SearchCommand}" />
                 </TextBox.KeyBindings>
             </TextBox>
             <Button Grid.Column="1" Content="SEARCH" Command="{Binding SearchCommand}"
-                    Margin="8,0,0,0" Padding="18,6" />
+                    Margin="8,0,0,0" Padding="20,6" />
         </Grid>
 
-        <ListBox Grid.Row="2"
-                 ItemsSource="{Binding FilteredDocuments}"
-                 SelectedItem="{Binding SelectedDocument}"
-                 Margin="0,10,0,0">
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <StackPanel Margin="4,3">
-                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
-                        <TextBlock Text="{Binding Snippet}"
-                                   IsVisible="{Binding HasSnippet}"
-                                   TextWrapping="Wrap"
-                                   FontSize="11"
-                                   Opacity="0.8" />
-                    </StackPanel>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
+        <!-- Folder sidebar + document list -->
+        <Grid Grid.Row="2" ColumnDefinitions="232,*" Margin="0,10,0,0">
+            <Border BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="0,0,1,0" Margin="0,0,12,0">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="FOLDERS" FontSize="11" FontWeight="SemiBold"
+                               Opacity="0.6" Margin="6,0,0,6" />
+                    <ListBox ItemsSource="{Binding Categories}" SelectedItem="{Binding SelectedCategory}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:CategoryItemViewModel">
+                                <TextBlock Text="{Binding DisplayName}" Margin="2,1"
+                                           TextTrimming="CharacterEllipsis" />
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </Border>
 
-        <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="12"
-                    HorizontalAlignment="Center" Margin="0,10,0,0">
-            <Button Content="OPEN" Click="OnOpenClicked"
-                    IsEnabled="{Binding HasSelectedDocument}" Padding="22,7" />
-            <Button Content="EXPORT / COPY" Click="OnExportClicked"
-                    IsEnabled="{Binding HasSelectedDocument}" Padding="22,7" />
-        </StackPanel>
+            <Grid Grid.Column="1" RowDefinitions="Auto,*">
+                <TextBlock Grid.Row="0" Text="{Binding ResultsSummary}" FontSize="11" Opacity="0.65"
+                           Margin="6,0,0,6" />
+                <ListBox Grid.Row="1"
+                         ItemsSource="{Binding FilteredDocuments}"
+                         SelectedItem="{Binding SelectedDocument}"
+                         DoubleTapped="OnDocumentDoubleTapped">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="vm:DocumentItemViewModel">
+                            <StackPanel Margin="2,3">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13"
+                                               TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Grid.Column="1" Text="{Binding Folder}" FontSize="11"
+                                               Opacity="0.55" Margin="12,2,0,0"
+                                               MaxWidth="340" TextTrimming="CharacterEllipsis" />
+                                </Grid>
+                                <TextBlock Text="{Binding Snippet}" IsVisible="{Binding HasSnippet}"
+                                           TextWrapping="Wrap" FontSize="11" Opacity="0.8"
+                                           Margin="0,2,0,0" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
+        </Grid>
 
-        <TextBlock Grid.Row="4"
-                   Text="{Binding StatusMessage}"
-                   TextWrapping="Wrap"
-                   Opacity="0.85"
-                   Margin="0,10,0,0" />
+        <!-- Action bar -->
+        <Grid Grid.Row="3" ColumnDefinitions="*,Auto,Auto" Margin="0,10,0,0">
+            <TextBlock Text="{Binding SelectedDocument.Name}"
+                       IsVisible="{Binding HasSelectedDocument}"
+                       VerticalAlignment="Center" FontSize="12" Opacity="0.7"
+                       TextTrimming="CharacterEllipsis" Margin="6,0,14,0" />
+            <Button Grid.Column="1" Content="OPEN" Click="OnOpenClicked"
+                    IsEnabled="{Binding HasSelectedDocument}" Padding="26,8" FontWeight="SemiBold" />
+            <Button Grid.Column="2" Content="EXPORT / COPY" Click="OnExportClicked"
+                    IsEnabled="{Binding HasSelectedDocument}" Padding="26,8" Margin="10,0,0,0" />
+        </Grid>
+
+        <!-- Status line + index chip -->
+        <Grid Grid.Row="4" ColumnDefinitions="*,Auto" Margin="0,10,0,0">
+            <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap" Opacity="0.85" FontSize="12" />
+            <TextBlock Grid.Column="1" Text="{Binding IndexStatusText}" FontSize="11" Opacity="0.6"
+                       VerticalAlignment="Bottom" Margin="14,0,0,0"
+                       MaxWidth="430" TextTrimming="CharacterEllipsis" />
+        </Grid>
     </Grid>
 
     <!-- Setup Mode (spec sections 12/13/16; owner only, reached after unlock) -->
     <ScrollViewer IsVisible="{Binding IsSetupMode}"
                   DataContext="{Binding Setup}"
                   x:DataType="vm:SetupViewModel"
-                  Margin="16">
-      <StackPanel Spacing="14">
+                  Margin="16,12">
+      <StackPanel Spacing="12" MaxWidth="920" HorizontalAlignment="Left">
+
         <Grid ColumnDefinitions="*,Auto">
-            <TextBlock Text="ARCHIVE SETUP" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center" />
-            <Button Grid.Column="1" Content="DONE" Click="OnSetupDoneClicked" Padding="18,6" />
+            <StackPanel Orientation="Horizontal" Spacing="10">
+                <TextBlock Text="ARCHIVE SETUP" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center" />
+                <TextBlock Text="Owner only" FontSize="12" Opacity="0.6" VerticalAlignment="Center" />
+            </StackPanel>
+            <Button Grid.Column="1" Content="DONE" Click="OnSetupDoneClicked" Padding="20,7" FontWeight="SemiBold" />
         </Grid>
 
         <!-- Dashboard (spec section 12) -->
-        <Grid ColumnDefinitions="*,*,*" Margin="0,4,0,0">
-            <StackPanel Spacing="2">
-                <TextBlock Text="Documents" FontSize="12" Opacity="0.7" />
-                <TextBlock Text="{Binding DocumentCountDisplay}" FontWeight="SemiBold" />
-                <TextBlock Text="Archive size" FontSize="12" Opacity="0.7" Margin="0,6,0,0" />
-                <TextBlock Text="{Binding ArchiveSizeDisplay}" FontWeight="SemiBold" />
+        <Border CornerRadius="8" Padding="16"
+                Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="1">
+            <StackPanel Spacing="4">
+                <TextBlock Text="ARCHIVE" FontSize="11" FontWeight="SemiBold" Opacity="0.6" />
+                <Grid ColumnDefinitions="*,*,*" Margin="0,4,0,0">
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="Documents" FontSize="12" Opacity="0.7" />
+                        <TextBlock Text="{Binding DocumentCountDisplay}" FontWeight="SemiBold" />
+                        <TextBlock Text="Archive size" FontSize="12" Opacity="0.7" Margin="0,8,0,0" />
+                        <TextBlock Text="{Binding ArchiveSizeDisplay}" FontWeight="SemiBold" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Spacing="2">
+                        <TextBlock Text="Free drive space" FontSize="12" Opacity="0.7" />
+                        <TextBlock Text="{Binding DriveFreeDisplay}" FontWeight="SemiBold" />
+                        <TextBlock Text="Revision" FontSize="12" Opacity="0.7" Margin="0,8,0,0" />
+                        <TextBlock Text="{Binding RevisionDisplay}" FontWeight="SemiBold" />
+                        <TextBlock Text="Last update" FontSize="12" Opacity="0.7" Margin="0,8,0,0" />
+                        <TextBlock Text="{Binding LastUpdateDisplay}" FontWeight="SemiBold" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Spacing="2">
+                        <TextBlock Text="Archive id" FontSize="12" Opacity="0.7" />
+                        <TextBlock Text="{Binding ArchiveId}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                        <TextBlock Text="Archive version" FontSize="12" Opacity="0.7" Margin="0,8,0,0" />
+                        <TextBlock Text="{Binding ArchiveVersion}" FontWeight="SemiBold" />
+                    </StackPanel>
+                </Grid>
+                <TextBlock Text="{Binding IntegrityStatus}" TextWrapping="Wrap" FontWeight="SemiBold" Margin="0,10,0,0" />
             </StackPanel>
-            <StackPanel Grid.Column="1" Spacing="2">
-                <TextBlock Text="Free drive space" FontSize="12" Opacity="0.7" />
-                <TextBlock Text="{Binding DriveFreeDisplay}" FontWeight="SemiBold" />
-                <TextBlock Text="Revision" FontSize="12" Opacity="0.7" Margin="0,6,0,0" />
-                <TextBlock Text="{Binding RevisionDisplay}" FontWeight="SemiBold" />
-                <TextBlock Text="Last update" FontSize="12" Opacity="0.7" Margin="0,6,0,0" />
-                <TextBlock Text="{Binding LastUpdateDisplay}" FontWeight="SemiBold" />
-            </StackPanel>
-            <StackPanel Grid.Column="2" Spacing="2">
-                <TextBlock Text="Archive id" FontSize="12" Opacity="0.7" />
-                <TextBlock Text="{Binding ArchiveId}" FontWeight="SemiBold" TextWrapping="Wrap" />
-                <TextBlock Text="Archive version" FontSize="12" Opacity="0.7" Margin="0,6,0,0" />
-                <TextBlock Text="{Binding ArchiveVersion}" FontWeight="SemiBold" />
-            </StackPanel>
-        </Grid>
+        </Border>
 
-        <TextBlock Text="{Binding IntegrityStatus}" TextWrapping="Wrap" FontWeight="SemiBold" />
-
-        <!-- Update / verify / rebuild -->
-        <StackPanel Orientation="Horizontal" Spacing="10">
-            <Button Content="UPDATE ARCHIVE" Command="{Binding UpdateCommand}" Padding="16,6" />
-            <Button Content="VERIFY ARCHIVE" Command="{Binding VerifyCommand}" Padding="16,6" />
-            <Button Content="REBUILD SEARCH INDEX" Command="{Binding RebuildIndexCommand}" Padding="16,6" />
-        </StackPanel>
+        <!-- Maintenance -->
+        <Border CornerRadius="8" Padding="16"
+                Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="1">
+            <StackPanel Spacing="10">
+                <TextBlock Text="MAINTENANCE" FontSize="11" FontWeight="SemiBold" Opacity="0.6" />
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <Button Content="UPDATE ARCHIVE" Command="{Binding UpdateCommand}" Padding="16,6" />
+                    <Button Content="VERIFY ARCHIVE" Command="{Binding VerifyCommand}" Padding="16,6" />
+                    <Button Content="REBUILD SEARCH INDEX" Command="{Binding RebuildIndexCommand}" Padding="16,6" />
+                </StackPanel>
+                <TextBlock Text="{Binding SetupStatus}" TextWrapping="Wrap" Opacity="0.9" />
+            </StackPanel>
+        </Border>
 
         <!-- Sources (spec section 13) -->
-        <TextBlock Text="Sources" FontSize="14" FontWeight="SemiBold" Margin="0,6,0,0" />
-        <ListBox ItemsSource="{Binding Sources}" SelectedItem="{Binding SelectedSource}" MaxHeight="120">
-            <ListBox.ItemTemplate>
-                <DataTemplate x:DataType="vm:SourceItemViewModel">
-                    <StackPanel Margin="4,2">
-                        <TextBlock Text="{Binding Alias}" FontWeight="SemiBold" />
-                        <TextBlock Text="{Binding Path}" FontSize="11" Opacity="0.8" TextWrapping="Wrap" />
-                    </StackPanel>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
-        <StackPanel Orientation="Horizontal" Spacing="10">
-            <Button Content="ADD SOURCE…" Click="OnAddSourceClicked" Padding="14,6" />
-            <Button Content="REMOVE SELECTED" Command="{Binding RemoveSourceCommand}" Padding="14,6" />
-            <TextBlock Text="{Binding SourceCount, StringFormat='{}{0} configured'}" VerticalAlignment="Center" Opacity="0.7" />
-        </StackPanel>
+        <Border CornerRadius="8" Padding="16"
+                Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="1">
+            <StackPanel Spacing="8">
+                <TextBlock Text="SOURCES" FontSize="11" FontWeight="SemiBold" Opacity="0.6" />
+                <ListBox ItemsSource="{Binding Sources}" SelectedItem="{Binding SelectedSource}" MaxHeight="140">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="vm:SourceItemViewModel">
+                            <StackPanel Margin="4,2">
+                                <TextBlock Text="{Binding Alias}" FontWeight="SemiBold" />
+                                <TextBlock Text="{Binding Path}" FontSize="11" Opacity="0.8" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <Button Content="ADD SOURCE…" Click="OnAddSourceClicked" Padding="14,6" />
+                    <Button Content="REMOVE SELECTED" Command="{Binding RemoveSourceCommand}" Padding="14,6" />
+                    <TextBlock Text="{Binding SourceCount, StringFormat='{}{0} configured'}" VerticalAlignment="Center" Opacity="0.7" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
 
-        <!-- Password change (spec section 12) -->
-        <TextBlock Text="Change password" FontSize="14" FontWeight="SemiBold" Margin="0,6,0,0" />
-        <Grid ColumnDefinitions="*,*,Auto" ColumnSpacing="8">
-            <TextBox PasswordChar="&#x2022;" Text="{Binding NewPassword}" Watermark="New password" />
-            <TextBox Grid.Column="1" PasswordChar="&#x2022;" Text="{Binding ConfirmNewPassword}" Watermark="Repeat new password" />
-            <Button Grid.Column="2" Content="CHANGE PASSWORD" Command="{Binding ChangePasswordCommand}" Padding="14,6" />
-        </Grid>
-
-        <!-- Recovery -->
-        <Button Content="EXPORT RECOVERY INSTRUCTIONS" Command="{Binding ExportRecoveryInstructionsCommand}"
-                Padding="14,6" HorizontalAlignment="Left" />
-
-        <TextBlock Text="{Binding SetupStatus}" TextWrapping="Wrap" Opacity="0.9" />
+        <!-- Security (spec section 12) -->
+        <Border CornerRadius="8" Padding="16"
+                Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="1">
+            <StackPanel Spacing="8">
+                <TextBlock Text="SECURITY" FontSize="11" FontWeight="SemiBold" Opacity="0.6" />
+                <Grid ColumnDefinitions="*,*,Auto" ColumnSpacing="8">
+                    <TextBox PasswordChar="&#x2022;" Text="{Binding NewPassword}" Watermark="New password" />
+                    <TextBox Grid.Column="1" PasswordChar="&#x2022;" Text="{Binding ConfirmNewPassword}" Watermark="Repeat new password" />
+                    <Button Grid.Column="2" Content="CHANGE PASSWORD" Command="{Binding ChangePasswordCommand}" Padding="14,6" />
+                </Grid>
+                <Button Content="EXPORT RECOVERY INSTRUCTIONS" Command="{Binding ExportRecoveryInstructionsCommand}"
+                        Padding="14,6" HorizontalAlignment="Left" />
+            </StackPanel>
+        </Border>
 
         <!-- Activity log (spec section 20) -->
-        <TextBlock Text="Activity log" FontSize="14" FontWeight="SemiBold" Margin="0,8,0,0" />
-        <ListBox ItemsSource="{Binding ActivityEntries}" MaxHeight="180">
-            <ListBox.ItemTemplate>
-                <DataTemplate x:DataType="core:OperationLogEntry">
-                    <StackPanel Margin="4,2">
-                        <TextBlock Text="{Binding TimestampUtc}" FontSize="11" Opacity="0.6" />
-                        <TextBlock Text="{Binding Message}" TextWrapping="Wrap" />
-                    </StackPanel>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
+        <Border CornerRadius="8" Padding="16"
+                Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="1">
+            <StackPanel Spacing="8">
+                <TextBlock Text="ACTIVITY LOG" FontSize="11" FontWeight="SemiBold" Opacity="0.6" />
+                <ListBox ItemsSource="{Binding ActivityEntries}" MaxHeight="200">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="core:OperationLogEntry">
+                            <StackPanel Margin="4,2">
+                                <TextBlock Text="{Binding TimestampUtc}" FontSize="11" Opacity="0.6" />
+                                <TextBlock Text="{Binding Message}" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </StackPanel>
+        </Border>
+
       </StackPanel>
     </ScrollViewer>
     </Panel>

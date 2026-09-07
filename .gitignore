@@ -18,3 +18,8 @@ TestResults/
 # Generated SBOM artifacts (regenerate with scripts/generate-sbom.ps1)
 sbom/*.json
 sbom/*.xml
+
+# transient tool output
+build.err
+test.err
+*.log.err
