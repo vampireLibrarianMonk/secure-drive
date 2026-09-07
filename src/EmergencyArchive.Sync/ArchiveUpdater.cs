@@ -73,8 +73,15 @@ public static class ArchiveUpdater
         progress?.Report(new ArchiveUpdateProgress("Scanning sources", 0, 0, string.Empty));
         ScannedFileSet scan = SourceScanner.Scan(sources);
 
-        // Diff the scan against the manifest (spec section 14).
-        var manifestByPath = manifest.Entries.ToDictionary(e => e.RelativePath, StringComparer.OrdinalIgnoreCase);
+        // Diff the scan against the manifest (spec section 14). Manually-added
+        // documents (ManifestSource.Manual, added via "Add file(s)") are owned
+        // by the user, not by any source folder, so they are excluded from the
+        // reconciliation entirely: never re-added, never deleted, always kept.
+        var folderEntries = manifest.Entries.Where(e => e.Source == ManifestSource.Folder).ToList();
+        var manualEntries = manifest.Entries.Where(e => e.Source == ManifestSource.Manual).ToList();
+        var manualPaths = new HashSet<string>(manualEntries.Select(e => e.RelativePath), StringComparer.OrdinalIgnoreCase);
+
+        var manifestByPath = folderEntries.ToDictionary(e => e.RelativePath, StringComparer.OrdinalIgnoreCase);
         var scannedByPath = scan.Files.ToDictionary(f => f.RelativePath, StringComparer.OrdinalIgnoreCase);
 
         List<string> added = [];
@@ -83,6 +90,13 @@ public static class ArchiveUpdater
 
         foreach (ScannedFile file in scan.Files)
         {
+            // A source file that collides with a manually-added document is left
+            // to the manual copy; the folder scan does not overwrite it.
+            if (manualPaths.Contains(file.RelativePath))
+            {
+                continue;
+            }
+
             if (!manifestByPath.TryGetValue(file.RelativePath, out ManifestEntry? entry))
             {
                 added.Add(file.RelativePath);
@@ -93,7 +107,7 @@ public static class ArchiveUpdater
             }
         }
 
-        foreach (ManifestEntry entry in manifest.Entries)
+        foreach (ManifestEntry entry in folderEntries)
         {
             if (!scannedByPath.ContainsKey(entry.RelativePath))
             {
@@ -127,10 +141,15 @@ public static class ArchiveUpdater
             done++;
         }
 
-        // Commit: the new manifest is written LAST.
+        // Commit: the new manifest is written LAST. It is the folder-sourced set
+        // (rebuilt from the scan) PLUS the manually-added documents, which are
+        // carried over untouched so a folder update never drops them. A source
+        // file colliding with a manual path yields to the manual copy.
         List<ManifestEntry> entries = scan.Files
+            .Where(f => !manualPaths.Contains(f.RelativePath))
             .Select(f => new ManifestEntry(f.RelativePath, f.Size, f.ModifiedTimeUtc, f.Sha256))
             .ToList();
+        entries.AddRange(manualEntries);
 
         // A manifest with no entries has never been committed: this is the
         // first revision (.001); otherwise the sequence increments same-day.

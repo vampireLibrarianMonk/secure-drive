@@ -67,9 +67,27 @@ public sealed record ArchiveManifest(
     }
 }
 
+/// <summary>How a document came to be in the archive (spec section 13/14).</summary>
+public enum ManifestSource
+{
+    /// <summary>Imported from a configured source folder; reconciled by UPDATE.</summary>
+    Folder = 0,
+
+    /// <summary>Added individually by the owner ("Add file(s)"); never removed by a folder UPDATE.</summary>
+    Manual = 1,
+}
+
 /// <summary>One document entry of the manifest (spec section 15).</summary>
 public sealed record ManifestEntry(
     string RelativePath,
     long Size,
     DateTimeOffset ModifiedTimeUtc,
-    string Sha256);
+    string Sha256)
+{
+    /// <summary>
+    /// Provenance of the document. Defaults to <see cref="ManifestSource.Folder"/>
+    /// so existing manifests (which have no such field) deserialize unchanged.
+    /// Manually-added documents are preserved across folder-based updates.
+    /// </summary>
+    public ManifestSource Source { get; init; } = ManifestSource.Folder;
+}

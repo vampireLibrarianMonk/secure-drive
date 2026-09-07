@@ -1,3 +1,4 @@
+using EmergencyArchive.Core;
 using EmergencyArchive.Crypto.Vault;
 using EmergencyArchive.Integrity;
 using EmergencyArchive.Search;
@@ -116,5 +117,92 @@ public class ArchiveUpdaterTests : IDisposable
 
         Assert.True(report.NoChanges);
         Assert.Equal(current.ArchiveVersion, report.ArchiveVersion);
+    }
+
+    [Fact]
+    public void ManuallyAddedDocument_SurvivesFolderUpdate_AndIsNeverDeleted()
+    {
+        // A folder-sourced document exists...
+        WriteSourceFile("Home policy.txt", "content");
+        InitialUpdate();
+
+        const string manualPath = "Legal/will.txt";
+
+        // ...and the owner adds an individual document (ManifestSource.Manual)
+        // that is NOT in any source folder.
+        using (VaultSession session = VaultStore.Unlock(vaultDir, Password))
+        {
+            session.WriteFile(manualPath, System.Text.Encoding.UTF8.GetBytes("last will and testament"));
+            ArchiveManifest manifest = ManifestStore.Load(session)!;
+            var entries = new List<ManifestEntry>(manifest.Entries)
+            {
+                new ManifestEntry(manualPath, 23, DateTimeOffset.UtcNow, new string('a', 64))
+                {
+                    Source = ManifestSource.Manual,
+                },
+            };
+            ManifestStore.Save(session, manifest with { Entries = entries });
+        }
+
+        // A later folder UPDATE (manual doc absent from the source scan) must
+        // NOT delete it and must keep it in the committed manifest.
+        using (VaultSession session = VaultStore.Unlock(vaultDir, Password))
+        {
+            WriteSourceFile("Home policy.txt", "changed content so the update is not a no-op");
+            ArchiveManifest manifest = ManifestStore.Load(session)!;
+            ArchiveUpdateReport report = ArchiveUpdater.Update(session, manifest, Config());
+
+            Assert.DoesNotContain(manualPath, report.Plan.Deleted);
+        }
+
+        // The manual document is still present, still Manual, still readable.
+        using (VaultSession session = VaultStore.Unlock(vaultDir, Password))
+        {
+            Assert.True(session.FileExists(manualPath));
+            ArchiveManifest manifest = ManifestStore.Load(session)!;
+            ManifestEntry? entry = manifest.Find(manualPath);
+            Assert.NotNull(entry);
+            Assert.Equal(ManifestSource.Manual, entry!.Source);
+            Assert.Equal("last will and testament", System.Text.Encoding.UTF8.GetString(session.ReadFile(manualPath)));
+        }
+    }
+
+    [Fact]
+    public void DeletingADocument_RemovesItFromVault_Manifest_AndIndex()
+    {
+        WriteSourceFile("Home policy.txt", "the home insurance policy");
+        WriteSourceFile("New bank details.txt", "IBAN DE89 3704 0044");
+        InitialUpdate();
+
+        const string toDelete = "sources/New bank details.txt";
+
+        // Delete using the same primitives the Setup "Delete" action uses:
+        // RemoveFile + manifest entry removal + index delete-plan.
+        using (VaultSession session = VaultStore.Unlock(vaultDir, Password))
+        {
+            Assert.True(session.RemoveFile(toDelete));
+
+            ArchiveManifest manifest = ManifestStore.Load(session)!;
+            var entries = manifest.Entries
+                .Where(e => !string.Equals(e.RelativePath, toDelete, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            ArchiveManifest updated = manifest with { Entries = entries };
+            ManifestStore.Save(session, updated);
+
+            using VaultSearchIndex index = VaultSearchIndex.LoadOrBuild(session);
+            index.ApplyChanges(session, new SyncPlan([], [], [toDelete]), updated);
+            index.Save(session);
+        }
+
+        using (VaultSession session = VaultStore.Unlock(vaultDir, Password))
+        {
+            Assert.False(session.FileExists(toDelete));
+            Assert.Null(ManifestStore.Load(session)!.Find(toDelete));
+            Assert.Equal(1, ManifestStore.Load(session)!.DocumentCount);
+
+            using VaultSearchIndex index = VaultSearchIndex.LoadOrBuild(session);
+            Assert.DoesNotContain(index.Search("IBAN"), r => r.RelativePath == toDelete);
+            Assert.Contains(index.Search("insurance"), r => r.RelativePath == "sources/Home policy.txt");
+        }
     }
 }
