@@ -157,8 +157,11 @@ if ($SkipApp) {
 $vaultDir = Join-Path $root 'vault'
 $masterkey = Join-Path $vaultDir 'masterkey.cryptomator'
 
+$vaultCreatedHere = $false
+
 if ($SkipVault) {
     Write-Step 'Skipping vault creation (-SkipVault)'
+    Write-Host '  The app will show CREATE YOUR ARCHIVE on launch so you can set the password there.'
 } elseif (Test-Path $masterkey) {
     Write-Step 'Vault already exists on this drive — leaving it untouched'
     Write-Host "  Found $masterkey"
@@ -190,13 +193,17 @@ if ($SkipVault) {
         }
     }
     Write-Host "  Vault created at $vaultDir" -ForegroundColor Green
+    $vaultCreatedHere = $true
 }
 
 Write-Host ''
 Write-Host "Drive $root is ready for first use." -ForegroundColor Green
 Write-Host 'Next steps:'
 Write-Host "  1. Open $root and run START-WINDOWS.exe (if the app was deployed)."
-Write-Host '  2. Enter the archive password you just chose.'
-Write-Host '  3. Click SETUP, then RUN ESTATE-PLANNING SETUP to seed folders and'
-Write-Host '     write a letter for your family, then ADD your documents folder and UPDATE.'
+if ($vaultCreatedHere) {
+    Write-Host '  2. Enter the archive password you just chose.'
+} else {
+    Write-Host '  2. On the CREATE YOUR ARCHIVE screen, choose a password to create the vault.'
+}
+Write-Host '  3. Click SETUP, then WRITE ESTATE-PLANNING LETTER, then add your documents.'
 Write-Host '  See docs\FIRST-USE.md for the full walkthrough.'

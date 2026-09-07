@@ -118,6 +118,17 @@ prompt with `-Force`), refuses the system drive, and leaves any other files on
 the drive untouched. Because it deletes only those two folders, you do not need
 to reformat the drive.
 
+To reset and then set the new password **in the app** (no command line for the
+vault), add `-SkipVault`:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\setup-drive.ps1 -DriveLetter D -Reset -SkipVault
+```
+
+The drive is wiped and re-laid-out but no vault is created, so launching
+`START-WINDOWS.exe` shows the **CREATE YOUR ARCHIVE** screen where you choose the
+new password.
+
 ### Choosing the password
 
 This password is the **only** key to the archive. There is **no reset**.
