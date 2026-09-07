@@ -11,5 +11,6 @@
   <Project Path="tests/EmergencyArchive.Search.Tests/EmergencyArchive.Search.Tests.csproj" />
   <Project Path="tests/EmergencyArchive.Sync.Tests/EmergencyArchive.Sync.Tests.csproj" />
   <Project Path="tests/EmergencyArchive.Integrity.Tests/EmergencyArchive.Integrity.Tests.csproj" />
+  <Project Path="tests/EmergencyArchive.UI.Tests/EmergencyArchive.UI.Tests.csproj" />
 </Solution>
 
