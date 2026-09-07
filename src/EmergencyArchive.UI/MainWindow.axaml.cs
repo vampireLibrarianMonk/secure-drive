@@ -133,6 +133,38 @@ public partial class MainWindow : Window
         }
     }
 
+    private async void OnAddFilesClicked(object? sender, RoutedEventArgs e)
+    {
+        var setup = ViewModel.Setup;
+        if (setup is null)
+        {
+            return;
+        }
+
+        var storage = TopLevel.GetTopLevel(this)?.StorageProvider;
+        if (storage is null)
+        {
+            return;
+        }
+
+        IReadOnlyList<IStorageFile> files = await storage.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Add document(s) to the archive",
+            AllowMultiple = true,
+        });
+
+        var paths = files
+            .Select(f => f.TryGetLocalPath())
+            .Where(p => !string.IsNullOrEmpty(p))
+            .Select(p => p!)
+            .ToList();
+
+        if (paths.Count > 0)
+        {
+            setup.AddFilesFromPaths(paths);
+        }
+    }
+
     private void OnSetupDoneClicked(object? sender, RoutedEventArgs e)
     {
         ViewModel.ExitSetup();

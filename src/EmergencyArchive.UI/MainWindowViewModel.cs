@@ -26,6 +26,12 @@ public partial class MainWindowViewModel : ObservableObject
     private SetupViewModel? setup;
     private OperationLog? operationLog;
 
+    public MainWindowViewModel()
+    {
+        // Decide the first screen: create-archive (no vault yet) or unlock.
+        DetectVault();
+    }
+
     public const string ReadyMessage = "Enter the archive password to continue.";
     public const string UnlockingMessage = "Unlocking archive… (deriving the key takes a moment)";
     public const string WrongPasswordMessage = "Unable to unlock archive.\nCheck the password and try again.";
@@ -41,6 +47,7 @@ public partial class MainWindowViewModel : ObservableObject
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(UnlockCommand))]
+    [NotifyCanExecuteChangedFor(nameof(CreateArchiveCommand))]
     private bool isBusy;
 
     [ObservableProperty]
@@ -54,6 +61,9 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SearchCommand))]
     [NotifyCanExecuteChangedFor(nameof(EnterSetupCommand))]
+    [NotifyPropertyChangedFor(nameof(IsCreating))]
+    [NotifyPropertyChangedFor(nameof(IsUnlockable))]
+    [NotifyPropertyChangedFor(nameof(IsBrowsing))]
     private bool isUnlocked;
 
     [ObservableProperty]
@@ -369,7 +379,16 @@ public partial class MainWindowViewModel : ObservableObject
     private void LoadDocuments()
     {
         Documents.Clear();
-        foreach (string path in session!.EnumerateFiles().OrderBy(p => p, StringComparer.OrdinalIgnoreCase))
+
+        // Never show the vault's own infrastructure files (search index,
+        // operations.log, sources.json, manifest) as documents — they are not
+        // user content and only confuse browsing and search. This mirrors the
+        // exclusion the search index already applies (VaultPaths).
+        IEnumerable<string> documentPaths = session!.EnumerateFiles()
+            .Where(path => !VaultPaths.IsInfrastructurePath(path))
+            .OrderBy(p => p, StringComparer.OrdinalIgnoreCase);
+
+        foreach (string path in documentPaths)
         {
             Documents.Add(new DocumentItemViewModel(path));
         }

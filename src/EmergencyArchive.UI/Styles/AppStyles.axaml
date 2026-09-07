@@ -1,0 +1,64 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+      Shared, reusable styles so spacing and "card" chrome are consistent
+      across all three screens instead of hand-tuned per grid. Balancing the
+      UI (task 1) is driven from here rather than from literal margins in
+      MainWindow.axaml.
+    -->
+
+    <!-- A padded, bordered "card" panel used throughout Setup Mode and the
+         password screen. One definition keeps corner radius / padding / colour
+         identical everywhere. -->
+    <Style Selector="Border.card">
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="18" />
+        <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+    </Style>
+
+    <!-- Small uppercase section heading (e.g. ARCHIVE, MAINTENANCE, SOURCES). -->
+    <Style Selector="TextBlock.sectionHeading">
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Opacity" Value="0.6" />
+    </Style>
+
+    <!-- A muted label above a value in the dashboard. -->
+    <Style Selector="TextBlock.fieldLabel">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Opacity" Value="0.7" />
+    </Style>
+
+    <Style Selector="TextBlock.fieldValue">
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+
+    <!-- The large primary screen title (EMERGENCY ARCHIVE, ARCHIVE SETUP). -->
+    <Style Selector="TextBlock.screenTitle">
+        <Setter Property="FontSize" Value="20" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <!-- A consistent primary action button emphasis. Uses MinHeight + real
+         vertical padding (rather than a fixed Height) so the label is always
+         centered and never looks clipped/shrunk, and centers content both ways. -->
+    <Style Selector="Button.primary">
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="MinHeight" Value="40" />
+        <Setter Property="Padding" Value="22,9" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+
+    <!-- Ensure the label inside a primary button is itself centered, in case a
+         theme wraps the content in a presenter that left-aligns text. -->
+    <Style Selector="Button.primary /template/ ContentPresenter">
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+
+</Styles>

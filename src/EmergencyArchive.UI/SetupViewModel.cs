@@ -37,11 +37,40 @@ public sealed partial class SetupViewModel : ObservableObject
         RefreshDashboard();
         ReloadSources();
         ReloadActivity();
+        ReloadManageableDocuments();
+        RestoreIntegrityStatus();
+    }
+
+    /// <summary>
+    /// Restores the integrity line from the most recent VERIFY entry in the
+    /// operation log, so the result does not reset to "Not verified yet" each
+    /// time Setup is re-entered (a fresh view model is created every time).
+    /// </summary>
+    private void RestoreIntegrityStatus()
+    {
+        OperationLogEntry? lastVerify = operationLog.NewestFirst
+            .FirstOrDefault(e => string.Equals(e.Category, "Verify", StringComparison.OrdinalIgnoreCase));
+        if (lastVerify is null)
+        {
+            return;
+        }
+
+        string when = $"{lastVerify.TimestampUtc:yyyy-MM-dd HH:mm} UTC";
+        IntegrityStatus = lastVerify.Message.StartsWith("Verification passed", StringComparison.OrdinalIgnoreCase)
+            ? $"Last check ({when}): HEALTHY. Run VERIFY ARCHIVE to re-check."
+            : $"Last check ({when}): {lastVerify.Message} Run VERIFY ARCHIVE to re-check.";
     }
 
     // --- Activity log (spec section 20) --------------------------------------
 
     public ObservableCollection<OperationLogEntry> ActivityEntries { get; } = new();
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasActivity))]
+    private string activityCountDisplay = "No activity yet";
+
+    /// <summary>True when there is at least one activity entry to show.</summary>
+    public bool HasActivity => ActivityEntries.Count > 0;
 
     private void ReloadActivity()
     {
@@ -50,6 +79,14 @@ public sealed partial class SetupViewModel : ObservableObject
         {
             ActivityEntries.Add(entry);
         }
+
+        ActivityCountDisplay = ActivityEntries.Count switch
+        {
+            0 => "No activity yet",
+            1 => "1 entry",
+            int n => $"{n:N0} entries",
+        };
+        OnPropertyChanged(nameof(HasActivity));
     }
 
     private void RecordActivity(string category, string message)
@@ -90,6 +127,7 @@ public sealed partial class SetupViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(VerifyCommand))]
     [NotifyCanExecuteChangedFor(nameof(RebuildIndexCommand))]
     [NotifyCanExecuteChangedFor(nameof(ChangePasswordCommand))]
+    [NotifyCanExecuteChangedFor(nameof(RunEstateSetupCommand))]
     private bool isBusy;
 
     [ObservableProperty] private string? setupStatus = string.Empty;
@@ -121,7 +159,11 @@ public sealed partial class SetupViewModel : ObservableObject
     /// <summary>Raised when an update changed the stored documents; the browse screen reloads.</summary>
     public event EventHandler? DocumentsChanged;
 
-    private void OnDocumentsChanged() => DocumentsChanged?.Invoke(this, EventArgs.Empty);
+    private void OnDocumentsChanged()
+    {
+        ReloadManageableDocuments();
+        DocumentsChanged?.Invoke(this, EventArgs.Empty);
+    }
 }
 
 /// <summary>One configured source directory shown in Setup Mode.</summary>

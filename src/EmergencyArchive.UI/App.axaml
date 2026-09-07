@@ -5,6 +5,7 @@
 
     <Application.Styles>
         <FluentTheme />
+        <StyleInclude Source="avares://EmergencyArchive.UI/Styles/AppStyles.axaml" />
     </Application.Styles>
 
 </Application>
