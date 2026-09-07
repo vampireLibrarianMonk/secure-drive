@@ -39,6 +39,7 @@ public sealed partial class SetupViewModel : ObservableObject
         ReloadActivity();
         ReloadManageableDocuments();
         RestoreIntegrityStatus();
+        LoadEstateState();
     }
 
     /// <summary>
@@ -127,7 +128,6 @@ public sealed partial class SetupViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(VerifyCommand))]
     [NotifyCanExecuteChangedFor(nameof(RebuildIndexCommand))]
     [NotifyCanExecuteChangedFor(nameof(ChangePasswordCommand))]
-    [NotifyCanExecuteChangedFor(nameof(RunEstateSetupCommand))]
     private bool isBusy;
 
     [ObservableProperty] private string? setupStatus = string.Empty;

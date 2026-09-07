@@ -2,6 +2,11 @@ using System.IO;
 using System.Text;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using EmergencyArchive.Core;
+using EmergencyArchive.Crypto.Vault;
+using EmergencyArchive.Integrity;
+using EmergencyArchive.Search;
+using EmergencyArchive.Sync;
 
 namespace EmergencyArchive.UI;
 
@@ -44,6 +49,9 @@ public sealed partial class SetupViewModel
 
     [ObservableProperty] private string? estateContact;
 
+    /// <summary>The editable letter shown in the estate card and saved verbatim to the vault.</summary>
+    [ObservableProperty] private string estateLetterText = string.Empty;
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasEstateStatus))]
     private string? estateStatus;
@@ -52,60 +60,126 @@ public sealed partial class SetupViewModel
 
     public bool HasEstateStatus => !string.IsNullOrEmpty(EstateStatus);
 
-    private bool CanRunEstateSetup => !IsBusy;
+    private string EstateLetterPath => $"{EstateFolderName}/{EstateLetterFileName}";
 
-    [RelayCommand(CanExecute = nameof(CanRunEstateSetup))]
-    private async Task RunEstateSetupAsync()
+    private bool CanSaveEstateLetter => !IsBusy && !string.IsNullOrWhiteSpace(EstateLetterText);
+
+    private bool CanGenerateTemplate => !IsBusy;
+
+    /// <summary>
+    /// Loads the estate letter into the editable box when Setup opens: the
+    /// existing letter if one was saved before (so the owner keeps editing it),
+    /// otherwise a generated starter template. Called from the constructor.
+    /// </summary>
+    private void LoadEstateState()
     {
-        IsBusy = true;
-        EstateStatus = "Preparing your estate-planning archive…";
+        // One-time cleanup of old placeholder notes from a previous flow version.
         try
         {
-            string ownerName = string.IsNullOrWhiteSpace(EstateOwnerName) ? "the archive owner" : EstateOwnerName!.Trim();
-            string contact = string.IsNullOrWhiteSpace(EstateContact) ? "(none provided)" : EstateContact!.Trim();
+            RemoveStalePlaceholders();
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or VaultException)
+        {
+            // Non-fatal: cleanup is best-effort.
+        }
 
+        if (session.FileExists(EstateLetterPath))
+        {
+            try
+            {
+                EstateLetterText = Encoding.UTF8.GetString(session.ReadFile(EstateLetterPath));
+                EstateStatusChip = "saved — edit and save again to update";
+                return;
+            }
+            catch (VaultException)
+            {
+                // Fall through to a fresh template if the stored letter is unreadable.
+            }
+        }
+
+        EstateLetterText = BuildEstateLetter(TrimmedOwnerName(), TrimmedContact());
+        EstateStatusChip = "not saved yet";
+    }
+
+    private string TrimmedOwnerName() => string.IsNullOrWhiteSpace(EstateOwnerName) ? "the archive owner" : EstateOwnerName!.Trim();
+
+    private string TrimmedContact() => string.IsNullOrWhiteSpace(EstateContact) ? "(none provided)" : EstateContact!.Trim();
+
+    // Regenerating the template or editing name/contact should re-enable Save.
+    partial void OnEstateLetterTextChanged(string value) => SaveEstateLetterCommand.NotifyCanExecuteChanged();
+
+    partial void OnIsBusyChanged(bool value)
+    {
+        SaveEstateLetterCommand.NotifyCanExecuteChanged();
+        GenerateTemplateCommand.NotifyCanExecuteChanged();
+    }
+
+    /// <summary>Replaces the editable letter with a fresh template built from name/contact.</summary>
+    [RelayCommand(CanExecute = nameof(CanGenerateTemplate))]
+    private void GenerateTemplate()
+    {
+        EstateLetterText = BuildEstateLetter(TrimmedOwnerName(), TrimmedContact());
+        EstateStatus = "Template inserted. Edit it as you like, then click SAVE LETTER.";
+    }
+
+    /// <summary>Saves the (possibly edited) letter to the vault and refreshes the public readme.</summary>
+    [RelayCommand(CanExecute = nameof(CanSaveEstateLetter))]
+    private async Task SaveEstateLetterAsync()
+    {
+        string letter = EstateLetterText;
+        string ownerName = TrimmedOwnerName();
+        string contact = TrimmedContact();
+
+        IsBusy = true;
+        EstateStatus = "Saving your estate-planning letter…";
+        try
+        {
             await Task.Run(() =>
             {
-                // 0. Remove any placeholder "_About this folder.txt" notes left
-                //    by an earlier version of this flow — they clutter browse
-                //    and pollute search. Safe if none exist.
-                RemoveStalePlaceholders();
+                // Save the edited letter verbatim into the vault (create or overwrite).
+                session.WriteFile(EstateLetterPath, Encoding.UTF8.GetBytes(letter));
 
-                // 1. The encrypted letter, as a single browsable document in the
-                //    vault. It also carries the "what belongs in each folder"
-                //    guidance, so we do not create placeholder notes per folder
-                //    (those would clutter browse and pollute search).
-                string letter = BuildEstateLetter(ownerName, contact);
-                session.WriteFile($"{EstateFolderName}/{EstateLetterFileName}", Encoding.UTF8.GetBytes(letter));
+                // Keep it searchable: index this one document incrementally.
+                IndexEstateLetter();
 
-                // 2. The password-free companion on the drive's public\ folder.
+                // Refresh the password-free companion on the drive's public\ folder.
                 WriteEstatePublicReadme(ownerName, contact);
             });
 
             RefreshDashboard();
             OnDocumentsChanged();
-            RecordActivity("Estate", $"Estate-planning setup completed for {ownerName}.");
-            EstateStatusChip = "ready";
+            RecordActivity("Estate", "Estate-planning letter saved.");
+            EstateStatusChip = "saved — edit and save again to update";
             EstateStatus =
-                "Estate-planning archive prepared:\n" +
-                $"  • '{EstateFolderName}' now holds a letter to your family (with guidance on what to file where).\n" +
-                "  • A password-free explanation was written to the drive's public\\ folder.\n" +
-                "  • Any old '_About this folder.txt' placeholder notes were removed.\n\n" +
-                "Next: click ADD MY DOCUMENTS FOLDER above (or ADD SOURCE below), pick the folder on this " +
-                "computer that holds your real documents, then click UPDATE ARCHIVE to import them. " +
-                "The recommended folders (Identity, Financial, Insurance, Property, Legal, Medical, Family) " +
-                "appear on their own as you add documents to them.\n\n" +
-                "If you had run estate setup before, click REBUILD SEARCH INDEX so the removed notes no longer appear in search.";
+                $"Saved. '{EstateFolderName}/{EstateLetterFileName}' now holds your letter, and a " +
+                "password-free copy was written to the drive's public\\ folder. You can edit the text " +
+                "above and click SAVE LETTER again at any time.";
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidOperationException)
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidOperationException or VaultException)
         {
-            EstateStatus = $"Estate-planning setup could not finish: {e.Message}";
-            RecordActivity("Estate", $"Estate-planning setup failed: {e.Message}");
+            EstateStatus = $"Could not save the letter: {e.Message}";
+            RecordActivity("Estate", $"Estate-planning save failed: {e.Message}");
         }
         finally
         {
             IsBusy = false;
         }
+    }
+
+    /// <summary>Indexes just the estate letter so it is immediately searchable.</summary>
+    private void IndexEstateLetter()
+    {
+        VaultSearchIndex? index = getIndex();
+        if (index is null)
+        {
+            index = VaultSearchIndex.LoadOrBuild(session);
+            setIndex(index);
+        }
+
+        ArchiveManifest manifest = ManifestStore.Load(session)
+            ?? ArchiveManifest.Empty(session.VaultId, "not committed");
+        index.ApplyChanges(session, new SyncPlan([EstateLetterPath], [], []), manifest);
+        index.Save(session);
     }
 
     /// <summary>Legacy placeholder filename created by an earlier estate flow.</summary>

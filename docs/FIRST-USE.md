@@ -147,13 +147,16 @@ password, and click **SETUP**. The first card is **ESTATE PLANNING**:
 
 1. Type **your name** (used in the letter to your family) and, optionally, a
    **contact for help** (an executor, lawyer, or trusted relative).
-2. Click **WRITE ESTATE-PLANNING LETTER**. This:
-   - writes a plain-language **letter to your family** into an `Estate Plan`
-     folder inside the archive (encrypted, browsable immediately). The letter
-     includes guidance on where each kind of document is filed — Identity,
-     Financial, Insurance, Property, Legal, Medical, Family. Those folders
-     appear on their own once you file real documents in them (no placeholder
-     notes are created, so nothing clutters search);
+2. Review the **letter to your family** in the editable box (a starter template
+   is filled in; **INSERT FRESH TEMPLATE** rebuilds it from your name/contact).
+   Edit it however you like, then click **SAVE LETTER**. This:
+   - saves the letter into an `Estate Plan` folder inside the archive
+     (encrypted, browsable and searchable immediately). If a letter already
+     exists from a previous run, it is loaded so you can keep editing it. The
+     letter includes guidance on where each kind of document is filed —
+     Identity, Financial, Insurance, Property, Legal, Medical, Family — and
+     those folders appear on their own once you file real documents (no
+     placeholder notes, so nothing clutters search);
    - writes a **password-free** `ESTATE-PLAN-README.txt` into `public\` so that
      whoever finds the drive learns what it is and who to call.
 3. Add your documents, either way:

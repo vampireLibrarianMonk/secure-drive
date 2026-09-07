@@ -84,16 +84,20 @@ the archive password. Ordinary users never need it.
 ### Estate-planning quick setup
 
 The first card in Setup Mode is **1 · ESTATE PLANNING** — the fastest way to
-make the archive ready to pass on to family. Enter your name and, optionally, a
-contact for help, then click **WRITE ESTATE-PLANNING LETTER**. It:
+make the archive ready to pass on to family. It shows an **editable letter** in
+a scrollable box:
 
-- writes a plain-language **letter to your family** into an `Estate Plan`
-  folder (encrypted, browsable right away). The letter explains where each kind
-  of document is filed (Identity, Financial, Insurance, Property, Legal,
-  Medical, Family); those folders appear on their own as you add documents, so
-  no placeholder notes clutter search;
-- writes a **password-free** `ESTATE-PLAN-README.txt` into the drive's
+- If you have saved a letter before, it loads for further editing; otherwise a
+  starter template appears. **INSERT FRESH TEMPLATE** rebuilds the template from
+  your name and contact (this replaces the current text).
+- Edit the letter freely, then click **SAVE LETTER**. This writes it into the
+  `Estate Plan` folder (encrypted, browsable and searchable right away) and
+  refreshes a **password-free** `ESTATE-PLAN-README.txt` in the drive's
   `public\` folder so a finder knows what the drive is and who to contact.
+
+The letter explains where each kind of document is filed (Identity, Financial,
+Insurance, Property, Legal, Medical, Family); those folders appear on their own
+as you add documents, so no placeholder notes clutter search.
 
 Then add your documents from the *1 · Your documents* card, either way:
 
