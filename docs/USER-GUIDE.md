@@ -5,11 +5,10 @@ This guide is written for two people:
 1. **The person in an emergency** who needs a document right now (Emergency Mode).
 2. **The archive owner** who keeps the archive up to date (Setup Mode).
 
-> **Implementation status (Phase 0):** this guide describes the finished
-> product. Today the repository contains the environment, build pipeline, and
-> UI shell; Emergency Mode arrives in Phase 1 and full Setup Mode in Phase 4.
-> The guide is deployed to the drive (`app/resources/USER-GUIDE.md`) so it is
-> always with the archive.
+> Emergency Mode and Setup Mode (including the estate-planning quick setup) are
+> implemented. The guide is deployed to the drive
+> (`app/resources/USER-GUIDE.md`) so it is always with the archive. For a
+> first-time drive walkthrough, see [FIRST-USE.md](FIRST-USE.md).
 
 ---
 
@@ -32,13 +31,15 @@ password**, given to you by the archive owner.
 2. **Open the drive** in File Explorer and run **`START-WINDOWS.exe`**.
 3. **Type the archive password** into the single password field and press
    **UNLOCK**.
-4. **Search.** Click into the search field and type words from the document —
-   its name **or its contents** are searched (for example `home insurance`
-   finds the policy even if only the document text contains those words).
-   Press **ENTER** or the **SEARCH** button. Matching documents appear with a
-   text excerpt; results are grouped by category folder (Identity, Financial,
-   Insurance, Property, Legal, Medical, Education, Emergency, Family, Other).
-   Clearing the search field and pressing ENTER again shows every document.
+4. **Search.** There are two levels:
+   - **As you type**, the list filters instantly by **file name**.
+   - Press **ENTER** (or **SEARCH**) to search **inside the documents** as well
+     — the file name, its folder, and its text contents (for example
+     `home insurance` finds the policy even if those words appear only in the
+     document body). Matching documents appear with a text excerpt, grouped by
+     category folder. Content search works for PDF, text, Markdown, HTML, and
+     Office files (DOCX/XLSX/PPTX); scanned images and other non-text files are
+     found by name only. Clearing the field and pressing ENTER shows everything.
 5. **Open or export a document.** Select it and choose *Open* (opens with the
    computer's normal PDF/Office application) or *Export/Copy* to save a
    decrypted copy somewhere you choose (for example, the desktop or a printer).
@@ -74,28 +75,75 @@ carefully.
 Setup Mode is reached from inside the application, **after** unlocking with
 the archive password. Ordinary users never need it.
 
-> **Interim note (until Setup Mode ships):** the archive owner maintains the
-> archive with the command-line tool — `sources-add`, `update`, and `verify`
-> (see `docs/BUILD.md`). The behaviour matches the descriptions below.
+> **First time on a new drive?** If the drive has no archive yet, the app opens
+> a **CREATE YOUR ARCHIVE** screen instead of the password box: choose a
+> password, click CREATE ARCHIVE, and the app creates the vault and unlocks
+> straight into Setup. No command line required. See
+> [FIRST-USE.md](FIRST-USE.md).
 
-### Update the archive
+### Estate-planning quick setup
 
-After changing your source folders (the folders on your computer that hold the
-real documents), choose **UPDATE ARCHIVE**. The update:
+The first card in Setup Mode is **1 · ESTATE PLANNING** — the fastest way to
+make the archive ready to pass on to family. Enter your name and, optionally, a
+contact for help, then click **WRITE ESTATE-PLANNING LETTER**. It:
 
-1. Scans the configured sources.
-2. Detects added, changed, and deleted files.
-3. Stages the update, verifies it, and only then commits it.
+- writes a plain-language **letter to your family** into an `Estate Plan`
+  folder (encrypted, browsable right away). The letter explains where each kind
+  of document is filed (Identity, Financial, Insurance, Property, Legal,
+  Medical, Family); those folders appear on their own as you add documents, so
+  no placeholder notes clutter search;
+- writes a **password-free** `ESTATE-PLAN-README.txt` into the drive's
+  `public\` folder so a finder knows what the drive is and who to contact.
 
-An interrupted update (power loss, unplugged drive) never destroys the last
-known-good archive — the previous state is recovered automatically.
+Then add your documents from the *1 · Your documents* card, either way:
+
+- **Add individual files** — choose a category and click **ADD FILE(S)…** to
+  pick one or more files. They are added to the archive and searchable right
+  away, with no import step.
+- **Import whole folders** — click **ADD FOLDER…** to point at a folder of
+  documents, then **IMPORT / UPDATE ARCHIVE**.
+
+See [FIRST-USE.md](FIRST-USE.md) for the full first-time walkthrough.
+
+Setup Mode is organised into numbered cards: **1 · Estate planning**,
+**2 · Your documents**, **3 · Manage documents**, **4 · Maintenance**, and
+**5 · Security**, with the archive status at the top and the activity log
+pinned at the bottom. Estate planning comes first because it is the point of
+the archive — write the letter for your family, then fill the archive.
+
+### Add or import documents (card 2)
+
+Two ways, and you can freely use both:
+
+- **Add individual files** — choose a category and click **ADD FILE(S)…** to
+  pick one or more files. They are copied into the archive and are searchable
+  immediately; no source folder or import step is needed. Individually-added
+  files are kept even when you later re-import folders.
+- **Import from folders** — click **ADD FOLDER…** to register a folder on your
+  computer, then **IMPORT / UPDATE ARCHIVE**. The import:
+  1. Scans the configured folders.
+  2. Detects added, changed, and deleted files.
+  3. Stages the update, verifies it, and only then commits it.
+
+  An interrupted import (power loss, unplugged drive) never destroys the last
+  known-good archive — the previous state is recovered automatically. Re-run
+  **IMPORT / UPDATE ARCHIVE** whenever your source folders change.
+
+### Manage and delete documents (card 3)
+
+**2 · Manage documents** lists everything in the archive. Select a document and
+click **DELETE SELECTED**; the button then reads **CLICK AGAIN TO CONFIRM
+DELETE** — click it a second time to remove the document. Deleting takes it out
+of the archive, the integrity manifest, and the search index at once. Deletion
+is permanent: there is no undo inside the archive.
 
 ### Verify the archive
 
-Run **VERIFY ARCHIVE** occasionally and after every major update. It checks
-every document against its SHA-256 manifest entry and confirms the search
-database is healthy. Only a completed, successful check may report
-**✓ HEALTHY**.
+Run **VERIFY ARCHIVE** (card 4 · Maintenance) occasionally and after every
+major update. It checks every document against its SHA-256 manifest entry and
+confirms the search database is healthy. Only a completed, successful check may
+report **HEALTHY**. The result is remembered and shown at the top of Setup as
+"Last check (date): …", so you can see the outcome again without re-running it.
 
 ### Change the password
 

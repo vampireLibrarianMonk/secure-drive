@@ -41,6 +41,7 @@ documented, independently recoverable open-source format.
 
 | Document | Purpose |
 |---|---|
+| [docs/FIRST-USE.md](docs/FIRST-USE.md) | First-time drive setup (e.g. D:), where things live, and the estate-planning quick start |
 | [docs/USER-GUIDE.md](docs/USER-GUIDE.md) | How to use the archive in an emergency, and how to maintain it (Setup Mode) |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Components, data flows, key design decisions |
 | [docs/CRYPTOGRAPHY.md](docs/CRYPTOGRAPHY.md) | Vault format evaluation (Phase 0 draft) |
@@ -54,7 +55,7 @@ documented, independently recoverable open-source format.
 ├── src/            EmergencyArchive.{UI,Core,Crypto,Search,Sync,Integrity}
 ├── tests/          matching xUnit test projects
 ├── docs/           architecture, threat model, crypto, recovery, build, user guide
-├── scripts/        setup-env.ps1, generate-sbom.ps1, new-usb.ps1
+├── scripts/        setup-env.ps1, build-in-docker.ps1, test-ui.ps1, publish.ps1, new-usb.ps1, setup-drive.ps1, generate-sbom.ps1
 ├── sbom/           generated CycloneDX SBOM (per release)
 ├── EmergencyArchive.slnx   solution (new XML solution format, SDK 10 default)
 ├── global.json     pinned .NET SDK
@@ -80,6 +81,22 @@ dotnet test EmergencyArchive.slnx
 dotnet run --project src\EmergencyArchive.UI
 ```
 
+No .NET SDK on the host but have Docker? Build and test in the pinned SDK
+container instead (see [docs/BUILD.md](docs/BUILD.md)):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\build-in-docker.ps1 -Action test
+```
+
+## Continuous integration
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) builds and tests every
+push and pull request inside the pinned `mcr.microsoft.com/dotnet/sdk:10.0`
+container (Release, warnings-as-errors), then publishes a self-contained
+`linux-x64` VaultCli and runs it in a bare `ubuntu:24.04` image with **no .NET
+runtime** — the same run-anywhere check as `scripts\test-linux.ps1`. No host SDK
+is required; the shipped drive stays SDK-free and Docker-free.
+
 ## SBOM
 
 A CycloneDX SBOM is generated with the tool pinned in the local tool
@@ -103,14 +120,32 @@ with transitive pinning enabled, keeping the SBOM deterministic and reviewable.
 
 ## Preparing the USB drive
 
+**First-time setup of a drive (e.g. D:), end to end** — layout, application,
+and the encrypted vault in one command:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\publish.ps1          # build the app once
+powershell -ExecutionPolicy Bypass -File scripts\setup-drive.ps1 -DriveLetter D
+```
+
+`setup-drive.ps1` scaffolds the layout, deploys `START-WINDOWS.exe`, and creates
+the vault with `VaultCli create D:\vault` (prompting for the password). It only
+adds files, refuses the system drive, needs `-Force` for a non-empty drive, and
+skips vault creation if one already exists — safe to re-run. Full walkthrough in
+[docs/FIRST-USE.md](docs/FIRST-USE.md).
+
+> No command line for the vault? Run `setup-drive.ps1 -DriveLetter D -SkipVault`,
+> then launch `START-WINDOWS.exe` — with no vault present the app shows a
+> **CREATE YOUR ARCHIVE** screen that creates the vault for you.
+
+**Layout only** (no app, no vault):
+
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\new-usb.ps1 -DriveLetter D
 ```
 
 Creates the on-drive layout from spec §4 (`app/`, `vault/`, `public/`,
-`README.txt`, `public/RECOVERY-INSTRUCTIONS.txt`). It only adds files, refuses
-the system drive, and requires `-Force` for a drive that already has content.
-`START-WINDOWS.exe` is produced by the Phase 1 build.
+`README.txt`, `public/RECOVERY-INSTRUCTIONS.txt`).
 
 ## License
 

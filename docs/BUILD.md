@@ -44,6 +44,26 @@ dotnet test EmergencyArchive.slnx
 dotnet run --project src\EmergencyArchive.UI        # emergency screen (unlock UI)
 ```
 
+## Building without a host SDK (Docker)
+
+If you have Docker but not the .NET SDK on the host, build and test inside the
+pinned SDK container (the tag is read from `global.json`):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\build-in-docker.ps1              # build
+powershell -ExecutionPolicy Bypass -File scripts\build-in-docker.ps1 -Action test # build + full test suite
+powershell -ExecutionPolicy Bypass -File scripts\build-in-docker.ps1 -Configuration Release -Publish linux-x64
+```
+
+This is a **build-time** convenience only — it does not change the shipped
+drive, which stays SDK-free and Docker-free (the published binaries are
+self-contained; see Publishing below). The repo is mounted so `bin/obj` land in
+the tree just like a native build; NuGet packages stay inside the container. Use
+`-SkipPull` when the image is already local. For the canonical **Windows** `.exe`,
+still run `scripts\publish.ps1` on Windows. For the dedicated Linux validation
+drill (staged copy + bare-Ubuntu self-contained smoke), use
+`scripts\test-linux.ps1`.
+
 ## Creating the actual archive vault (interim, until Setup Mode)
 
 Until Setup Mode ships in Phase 4, the archive owner creates the vault with
@@ -118,6 +138,31 @@ powershell -ExecutionPolicy Bypass -File scripts\test-linux.ps1
 
 Requires Docker Desktop in Linux container mode. The same container command
 is what a Linux CI runner would execute.
+
+## UI tests (headless Avalonia)
+
+`tests/EmergencyArchive.UI.Tests` renders the real `MainWindow` in Avalonia's
+in-memory **headless** platform (no display needed) and asserts that exactly one
+screen is visible in each application state — create / password / browse / setup.
+These guard against screen-layering regressions (e.g. an `IsVisible` binding
+evaluated against the wrong `DataContext`, which silently defaults a control to
+visible and stacks two screens).
+
+They run as part of the normal suite (`dotnet test EmergencyArchive.slnx`), in
+`scripts\build-in-docker.ps1 -Action test`, and in CI. To run just them:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\test-ui.ps1 -SkipPull
+```
+
+## Continuous integration
+
+`.github/workflows/ci.yml` runs on every push and pull request. It builds and
+tests the solution inside the pinned `mcr.microsoft.com/dotnet/sdk:10.0`
+container (Release, warnings-as-errors) and then runs the self-contained
+`linux-x64` smoke test in a bare `ubuntu:24.04` image — the same steps as
+`scripts\build-in-docker.ps1` and `scripts\test-linux.ps1`, so local and CI
+results match.
 
 ## Troubleshooting
 

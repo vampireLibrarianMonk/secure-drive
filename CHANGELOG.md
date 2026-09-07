@@ -9,6 +9,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **In-app first-run vault creation**: when a drive has no vault, the app shows
+  a **CREATE YOUR ARCHIVE** screen (password + confirm, policy-checked) that
+  creates the vault and unlocks straight in — no CLI needed
+  (`VaultLocator.LocateCreatable`, `MainWindowViewModel.Create`).
+- **Estate-planning quick setup** (owner): writes a plain-language letter to the
+  family into an `Estate Plan` folder plus a password-free `ESTATE-PLAN-README`
+  in `public/`. It no longer creates per-folder placeholder notes (those
+  cluttered search); a re-run also removes any left by earlier builds.
+- **Add individual documents**: pick one or more files and add them to a chosen
+  category directly from Setup (indexed and searchable immediately), alongside
+  the folder-source import. Individually-added files are marked
+  `ManifestSource.Manual` and are preserved across folder-based updates.
+- **Delete documents**: a *Manage documents* card in Setup lists the archive and
+  removes a selected document from the vault, manifest, and search index (with a
+  two-step confirm).
+- **Headless UI tests** (`tests/EmergencyArchive.UI.Tests`, Avalonia.Headless):
+  assert exactly one screen is visible per app state, guarding against
+  screen-layering/binding regressions.
+- **Container build/CI tooling**: `scripts/build-in-docker.ps1` and
+  `scripts/test-ui.ps1` build and test in the pinned .NET SDK container (no host
+  SDK needed); `scripts/setup-drive.ps1` prepares a drive end-to-end (layout +
+  app + vault); `.github/workflows/ci.yml` runs build/test + a self-contained
+  Linux smoke on every push/PR.
+
+### Changed
+
+- **Setup Mode redesign**: a fixed header, numbered task cards
+  (1 Your documents, 2 Manage documents, 3 Estate planning, 4 Maintenance,
+  5 Security), and the activity log docked in its own scroll region so it is
+  never clipped. Activity entries show a category chip and formatted timestamp.
+- The last **VERIFY** result is now remembered and shown at the top of Setup
+  ("Last check (date): …") instead of resetting to "Not verified yet" each time
+  Setup is re-entered.
+
+### Fixed
+
+- Vault **infrastructure files** (search index, `operations.log`,
+  `sources.json`, manifest) no longer appear in the document browse/search list.
+- Folder **UPDATE no longer deletes individually-added documents**; manual
+  entries are excluded from source reconciliation and preserved on commit.
+- Corrected a Setup screen binding where the setup view overlapped the password
+  screen (`IsVisible` had resolved against the wrong `DataContext`), and a
+  missing change-notification that could leave the browse screen blank after
+  unlocking.
+- Primary buttons center their label reliably (shared `Button.primary` style).
+
 - **Phase 7 hardening** (spec §28): secret scanner (`scripts/scan-secrets.ps1`
   — clean), dependency audit (zero vulnerable packages incl. transitive),
   hardening checklist mapping every §28 item to its implementation
