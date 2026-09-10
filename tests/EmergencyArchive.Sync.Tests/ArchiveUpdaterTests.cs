@@ -205,4 +205,121 @@ public class ArchiveUpdaterTests : IDisposable
             Assert.Contains(index.Search("insurance"), r => r.RelativePath == "sources/Home policy.txt");
         }
     }
+
+    // The rename/move edit operations reduce to this relocate primitive:
+    // write-new + remove-old + manifest (preserving Source) + index re-point.
+    private static void Relocate(VaultSession session, string from, string to)
+    {
+        byte[] content = session.ReadFile(from);
+        session.WriteFile(to, content);
+        session.RemoveFile(from);
+
+        ArchiveManifest manifest = ManifestStore.Load(session)!;
+        ManifestSource source = manifest.Find(from)?.Source ?? ManifestSource.Manual;
+        var entries = manifest.Entries
+            .Where(e => !string.Equals(e.RelativePath, from, StringComparison.OrdinalIgnoreCase)
+                     && !string.Equals(e.RelativePath, to, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        entries.Add(new ManifestEntry(to, content.Length, DateTimeOffset.UtcNow,
+            EmergencyArchive.Integrity.Sha256.ComputeHash(new MemoryStream(content)))
+        {
+            Source = source,
+        });
+        ArchiveManifest updated = manifest with { Entries = entries };
+        ManifestStore.Save(session, updated);
+
+        using VaultSearchIndex index = VaultSearchIndex.LoadOrBuild(session);
+        index.ApplyChanges(session, new SyncPlan([to], [], [from]), updated);
+        index.Save(session);
+    }
+
+    [Fact]
+    public void RenamingADocument_MovesVaultManifestAndIndex_AndPreservesProvenance()
+    {
+        WriteSourceFile("Home policy.txt", "the home insurance policy");
+        InitialUpdate();
+
+        const string from = "sources/Home policy.txt";
+        const string to = "sources/Home insurance 2026.txt";
+
+        using (VaultSession session = VaultStore.Unlock(vaultDir, Password))
+        {
+            Relocate(session, from, to);
+        }
+
+        using (VaultSession session = VaultStore.Unlock(vaultDir, Password))
+        {
+            Assert.False(session.FileExists(from));
+            Assert.True(session.FileExists(to));
+
+            ArchiveManifest manifest = ManifestStore.Load(session)!;
+            Assert.Null(manifest.Find(from));
+            Assert.NotNull(manifest.Find(to));
+            Assert.Equal(ManifestSource.Folder, manifest.Find(to)!.Source); // provenance kept
+            Assert.Equal(1, manifest.DocumentCount);
+
+            using VaultSearchIndex index = VaultSearchIndex.LoadOrBuild(session);
+            Assert.Contains(index.Search("insurance"), r => r.RelativePath == to);
+            Assert.DoesNotContain(index.Search("insurance"), r => r.RelativePath == from);
+        }
+    }
+
+    [Fact]
+    public void MovingADocumentToAnotherCategory_UpdatesCategory_AndKeepsContent()
+    {
+        WriteSourceFile("will.txt", "last will and testament");
+        InitialUpdate();
+
+        const string from = "sources/will.txt";
+        const string to = "Legal/will.txt";
+
+        using (VaultSession session = VaultStore.Unlock(vaultDir, Password))
+        {
+            Relocate(session, from, to);
+        }
+
+        using (VaultSession session = VaultStore.Unlock(vaultDir, Password))
+        {
+            Assert.False(session.FileExists(from));
+            Assert.Equal("last will and testament", System.Text.Encoding.UTF8.GetString(session.ReadFile(to)));
+
+            using VaultSearchIndex index = VaultSearchIndex.LoadOrBuild(session);
+            SearchResultItem hit = index.Search("testament").Single(r => r.RelativePath == to);
+            Assert.Equal("Legal", hit.Category);
+        }
+    }
+
+    [Fact]
+    public void ReplacingContent_RehashesManifest_AndReindexesNewText()
+    {
+        WriteSourceFile("notes.txt", "old contents about apples");
+        InitialUpdate();
+
+        const string path = "sources/notes.txt";
+
+        using (VaultSession session = VaultStore.Unlock(vaultDir, Password))
+        {
+            byte[] newContent = System.Text.Encoding.UTF8.GetBytes("new contents about oranges");
+            session.WriteFile(path, newContent); // overwrite in place
+
+            ArchiveManifest manifest = ManifestStore.Load(session)!;
+            var entries = manifest.Entries.Where(e => e.RelativePath != path).ToList();
+            entries.Add(new ManifestEntry(path, newContent.Length, DateTimeOffset.UtcNow,
+                EmergencyArchive.Integrity.Sha256.ComputeHash(new MemoryStream(newContent))));
+            ArchiveManifest updated = manifest with { Entries = entries };
+            ManifestStore.Save(session, updated);
+
+            using VaultSearchIndex index = VaultSearchIndex.LoadOrBuild(session);
+            index.ApplyChanges(session, new SyncPlan([], [path], []), updated);
+            index.Save(session);
+        }
+
+        using (VaultSession session = VaultStore.Unlock(vaultDir, Password))
+        {
+            Assert.Equal("new contents about oranges", System.Text.Encoding.UTF8.GetString(session.ReadFile(path)));
+            using VaultSearchIndex index = VaultSearchIndex.LoadOrBuild(session);
+            Assert.Contains(index.Search("oranges"), r => r.RelativePath == path);
+            Assert.DoesNotContain(index.Search("apples"), r => r.RelativePath == path);
+        }
+    }
 }
