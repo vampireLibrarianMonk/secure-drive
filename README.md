@@ -1,5 +1,14 @@
 # Emergency Archive
 
+> 👋 **Not a developer? Just want to use the app?**
+> This README is for people building the code. If you only want to put the app
+> on a USB stick and use it, start at **[START-HERE.md](START-HERE.md)** →
+> **[User Guide](docs/USER-GUIDE.md)**. No programming required.
+
+*(Developer overview below.)*
+
+---
+
 A self-contained, offline, **encrypted emergency document archive** designed to
 run from commodity 32 GB USB flash drives.
 
@@ -39,15 +48,16 @@ documented, independently recoverable open-source format.
 
 ## Documentation
 
-| Document | Purpose |
-|---|---|
-| [docs/FIRST-USE.md](docs/FIRST-USE.md) | First-time drive setup (e.g. D:), where things live, and the estate-planning quick start |
-| [docs/USER-GUIDE.md](docs/USER-GUIDE.md) | How to use the archive in an emergency, and how to maintain it (Setup Mode) |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Components, data flows, key design decisions |
-| [docs/CRYPTOGRAPHY.md](docs/CRYPTOGRAPHY.md) | Vault format evaluation (Phase 0 draft) |
-| [docs/THREAT-MODEL.md](docs/THREAT-MODEL.md) | What is protected — and what is not |
-| [docs/RECOVERY.md](docs/RECOVERY.md) | Independent long-term recovery requirement |
-| [docs/BUILD.md](docs/BUILD.md) | Dev environment, build, test, SBOM, USB deployment |
+| Document | Audience | Purpose |
+|---|---|---|
+| [START-HERE.md](START-HERE.md) | Everyone | Router: sends users vs. developers to the right guide |
+| [docs/USER-GUIDE.md](docs/USER-GUIDE.md) | Users | Plain-language: download, set up the stick, set a password, add documents, find them in an emergency |
+| [docs/FIRST-USE.md](docs/FIRST-USE.md) | Helpers/IT | Command-line drive setup (e.g. D:), where things live, and reset |
+| [docs/BUILD.md](docs/BUILD.md) | Developers | Environment, build, test, container build, publish, SBOM |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Developers | Components, data flows, key design decisions |
+| [docs/CRYPTOGRAPHY.md](docs/CRYPTOGRAPHY.md) | Developers | Vault format evaluation (Phase 0 draft) |
+| [docs/THREAT-MODEL.md](docs/THREAT-MODEL.md) | Developers | What is protected — and what is not |
+| [docs/RECOVERY.md](docs/RECOVERY.md) | Developers | Independent long-term recovery requirement |
 
 ## Repository layout (spec §27)
 
