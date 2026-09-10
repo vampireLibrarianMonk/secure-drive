@@ -79,6 +79,44 @@ public class DocumentTextExtractorTests
     }
 
     [Fact]
+    public void Docx_DecompressionBomb_DegradesSafely_WithoutExhaustingMemory()
+    {
+        // Finding 3.1: a DOCX whose word/document.xml decompresses to ~512 MB
+        // of highly compressible markup that yields NO <t> text. The text-length
+        // cap alone never trips, so the per-entry decompression cap must stop it;
+        // extraction then degrades to null (index-by-name-only) rather than
+        // reading the whole bomb into memory.
+        byte[] bomb = BuildOoxmlBomb("word/document.xml", 512L * 1024 * 1024);
+
+        using var stream = new MemoryStream(bomb);
+        string? text = DocumentTextExtractor.Extract("bomb.docx", stream);
+
+        Assert.Null(text); // stopped by the decompression cap, safely
+    }
+
+    /// <summary>Builds a zip with one entry of <paramref name="uncompressedBytes"/> of a repeated, highly-compressible byte (no OOXML text elements).</summary>
+    private static byte[] BuildOoxmlBomb(string entryName, long uncompressedBytes)
+    {
+        using var ms = new MemoryStream();
+        using (var zip = new System.IO.Compression.ZipArchive(ms, System.IO.Compression.ZipArchiveMode.Create, leaveOpen: true))
+        {
+            System.IO.Compression.ZipArchiveEntry entry = zip.CreateEntry(entryName, System.IO.Compression.CompressionLevel.SmallestSize);
+            using Stream s = entry.Open();
+            byte[] block = new byte[64 * 1024];
+            Array.Fill(block, (byte)' '); // whitespace: valid-ish XML filler, no <t>
+            long written = 0;
+            while (written < uncompressedBytes)
+            {
+                int n = (int)Math.Min(block.Length, uncompressedBytes - written);
+                s.Write(block, 0, n);
+                written += n;
+            }
+        }
+
+        return ms.ToArray();
+    }
+
+    [Fact]
     public void Extraction_IsCapped()
     {
         byte[] large = new byte[DocumentTextExtractor.DefaultMaxCharacters + 50_000];

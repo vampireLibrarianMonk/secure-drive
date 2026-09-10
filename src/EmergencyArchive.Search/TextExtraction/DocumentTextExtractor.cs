@@ -17,6 +17,7 @@ public static class DocumentTextExtractor
 {
     public const int DefaultMaxCharacters = 1_000_000;
     private const int MaxRawBytes = 8 * 1024 * 1024;
+    private const int MaxPdfPages = 5_000;
 
     public static string? Extract(string fileName, Stream content, int maxCharacters = DefaultMaxCharacters)
     {
@@ -84,8 +85,12 @@ public static class DocumentTextExtractor
     {
         using var document = PdfDocument.Open(content);
         var sb = new StringBuilder();
-        foreach (Page page in document.GetPages())
+        // Bound the work for a hostile PDF with a huge page count (each page
+        // otherwise contributes at least a newline before the char cap trips).
+        int pagesToScan = Math.Min(document.NumberOfPages, MaxPdfPages);
+        for (int pageNumber = 1; pageNumber <= pagesToScan; pageNumber++)
         {
+            Page page = document.GetPage(pageNumber);
             foreach (Word word in page.GetWords())
             {
                 sb.Append(word.Text).Append(' ');
