@@ -1,0 +1,132 @@
+name: Release
+
+# Builds ready-to-use Windows and Linux packages and attaches them to a GitHub
+# Release. Triggered by pushing a version tag (e.g. v0.2.0). Each package is a
+# self-contained app laid out for a USB stick (spec section 4): the user
+# downloads one ZIP, extracts it onto the stick, and runs the launcher — the app
+# creates the vault on first launch. No .NET runtime is needed on the machine.
+#
+# To cut a release:
+#   1. Update VERSION (first line) + <Version> in Directory.Build.props + CHANGELOG.
+#   2. git tag vX.Y.Z && git push origin vX.Y.Z
+#
+# Requires: Settings -> Actions -> General -> Workflow permissions =
+# "Read and write permissions" (so the workflow can create the Release).
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch: {}   # allow manual runs from the Actions tab (no Release upload)
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows
+            os: windows-latest
+            rid: win-x64
+          - name: linux
+            os: ubuntu-latest
+            rid: linux-x64
+    runs-on: ${{ matrix.os }}
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
+      DOTNET_NOLOGO: 1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up .NET (from global.json)
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Publish UI (self-contained, single file)
+        shell: pwsh
+        run: >
+          dotnet publish src/EmergencyArchive.UI/EmergencyArchive.UI.csproj
+          -c Release -r ${{ matrix.rid }} --self-contained true
+          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+          -o artifacts/publish/${{ matrix.name }}/EmergencyArchive.UI
+
+      - name: Publish VaultCli (self-contained, single file)
+        shell: pwsh
+        run: >
+          dotnet publish tools/VaultCli/VaultCli.csproj
+          -c Release -r ${{ matrix.rid }} --self-contained true
+          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+          -o artifacts/publish/${{ matrix.name }}/VaultCli
+
+      # OPTIONAL — Windows code signing. Uncomment and add repo secrets
+      # SIGNING_PFX_BASE64 (base64 of your .pfx) and SIGNING_PFX_PASSWORD.
+      # This clears / softens the SmartScreen "unknown publisher" warning.
+      # - name: Sign Windows executables
+      #   if: matrix.name == 'windows' && env.SIGNING_PFX_BASE64 != ''
+      #   shell: pwsh
+      #   env:
+      #     SIGNING_PFX_BASE64: ${{ secrets.SIGNING_PFX_BASE64 }}
+      #     SIGNING_PFX_PASSWORD: ${{ secrets.SIGNING_PFX_PASSWORD }}
+      #   run: |
+      #     [IO.File]::WriteAllBytes("$env:RUNNER_TEMP/cert.pfx", [Convert]::FromBase64String($env:SIGNING_PFX_BASE64))
+      #     $signtool = Get-ChildItem "C:/Program Files (x86)/Windows Kits/10/bin/*/x64/signtool.exe" | Select-Object -Last 1
+      #     & $signtool.FullName sign /f "$env:RUNNER_TEMP/cert.pfx" /p $env:SIGNING_PFX_PASSWORD `
+      #       /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 `
+      #       artifacts/publish/windows/EmergencyArchive.UI/EmergencyArchive.UI.exe `
+      #       artifacts/publish/windows/VaultCli/VaultCli.exe
+
+      - name: Assemble drive layout
+        shell: pwsh
+        run: >
+          pwsh scripts/assemble-release.ps1
+          -Platform ${{ matrix.name }}
+          -PublishDir artifacts/publish/${{ matrix.name }}/EmergencyArchive.UI
+          -CliPublishDir artifacts/publish/${{ matrix.name }}/VaultCli
+          -StageDir stage/${{ matrix.name }}
+
+      - name: Read version
+        id: ver
+        shell: pwsh
+        run: |
+          $v = (Get-Content VERSION -TotalCount 1).Trim()
+          "version=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Zip package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          $zip = "dist/EmergencyArchive-${{ steps.ver.outputs.version }}-${{ matrix.name }}.zip"
+          Compress-Archive -Path stage/${{ matrix.name }}/* -DestinationPath $zip -Force
+          Write-Host "Created $zip"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-${{ matrix.name }}
+          path: dist/*.zip
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')   # only tag pushes create a Release
+    steps:
+      - name: Download all packages
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Create / update the Release with both packages
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
+          generate_release_notes: true
+          fail_on_unmatched_files: true

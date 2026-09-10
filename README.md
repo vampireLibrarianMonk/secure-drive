@@ -98,6 +98,31 @@ container instead (see [docs/BUILD.md](docs/BUILD.md)):
 powershell -ExecutionPolicy Bypass -File scripts\build-in-docker.ps1 -Action test
 ```
 
+## Releases (downloadable packages)
+
+Pushing a version tag builds ready-to-use Windows and Linux packages and
+attaches them to a GitHub Release
+([`.github/workflows/release.yml`](.github/workflows/release.yml)). Each package
+is a self-contained app laid out for a USB stick (spec §4) — a user extracts the
+ZIP onto the stick and runs the launcher; the app creates the vault on first
+launch. No .NET runtime is needed on the target machine.
+
+The authoritative version is the first line of the [`VERSION`](VERSION) file,
+kept in sync with `<Version>` in `Directory.Build.props` and the top
+[CHANGELOG](CHANGELOG.md) entry. To cut a release:
+
+```powershell
+# 1. bump VERSION (first line) + <Version> in Directory.Build.props
+# 2. move CHANGELOG [Unreleased] into a new [x.y.z] section
+git tag v0.2.0
+git push origin v0.2.0     # triggers the build-and-release workflow
+```
+
+Enable it once per repo: **Settings → Actions → General → Workflow permissions →
+Read and write permissions** (lets the workflow create the Release).
+`scripts/assemble-release.ps1` builds the on-drive layout the workflow zips, and
+can be run locally with `pwsh` to preview a package.
+
 ## Continuous integration
 
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) builds and tests every

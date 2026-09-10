@@ -39,13 +39,16 @@ Formatting **erases the stick**, so use an empty one or copy anything off first.
 ## Part 2 — Download the app
 
 1. Go to the project's **Releases** page on GitHub.
-2. Download the latest **Emergency Archive** package (a `.zip` file).
+2. Under the latest release, download the package for your computer:
+   - **Windows:** `EmergencyArchive-<version>-windows.zip`
+   - **Linux:** `EmergencyArchive-<version>-linux.zip`
 
-<!-- IMAGE: GitHub Releases page with the latest release's downloadable .zip asset highlighted. -->
+<!-- IMAGE: GitHub Releases page with the latest release's downloadable .zip assets (windows and linux) highlighted. -->
 ![Downloading the latest release from GitHub](../reference_images/github-download-release.png)
 
 > If you are not sure where the Releases page is, look on the project's main
-> page for a link that says **Releases** on the right-hand side.
+> page for a link that says **Releases** on the right-hand side. Nothing gets
+> installed on the computer — the whole app lives in this ZIP.
 
 ---
 
