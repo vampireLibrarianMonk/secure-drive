@@ -328,6 +328,11 @@ public partial class MainWindowViewModel : ObservableObject
         IndexStatusText = null;
         SelectedDocument = null;
         SearchText = null;
+        // Clear any password text still held in the entry boxes so it does not
+        // linger (even obfuscated) after locking (spec section 19/21).
+        Password = null;
+        NewArchivePassword = null;
+        ConfirmArchivePassword = null;
         IsUnlocked = false;
         StatusMessage = "Archive locked.";
     }
