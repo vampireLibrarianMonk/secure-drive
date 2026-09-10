@@ -358,6 +358,71 @@ public partial class MainWindowViewModel : ObservableObject
         return openTempDirectory;
     }
 
+    /// <summary>
+    /// Builds a safe temp path for OPEN from a document's (decrypted) name.
+    /// Defense in depth: the name comes from vault content, so it is reduced to
+    /// a bare, sanitized leaf and the resolved path is confirmed to stay inside
+    /// the per-session temp directory — a hostile name (traversal, absolute
+    /// path, reserved device name) can never cause a write outside it.
+    /// </summary>
+    public string BuildSafeOpenTargetPath(string documentName)
+    {
+        string tempDirectory = EnsureOpenTempDirectory();
+        string safeName = SanitizeLeafFileName(documentName);
+        string targetPath = Path.GetFullPath(Path.Combine(tempDirectory, safeName));
+
+        string root = Path.GetFullPath(tempDirectory) + Path.DirectorySeparatorChar;
+        if (!targetPath.StartsWith(root, StringComparison.Ordinal))
+        {
+            // Should be unreachable after sanitizing, but never write outside temp.
+            throw new InvalidOperationException("Refusing to open a document outside the working directory.");
+        }
+
+        return targetPath;
+    }
+
+    /// <summary>Reduces any string to a single safe filename leaf for host writes.</summary>
+    public static string SanitizeLeafFileName(string name)
+    {
+        // Strip any directory components a hostile name might carry.
+        string leaf = Path.GetFileName(name.Replace('\\', '/').TrimEnd('/', '\\'));
+
+        // Replace characters illegal on ANY target filesystem, not just the
+        // one we happen to run on: the app targets Windows, but this logic is
+        // also exercised on Linux (tests/CI). Windows forbids \ / : * ? " < > |
+        // and control chars; we strip the union so behaviour is deterministic.
+        var sanitized = new System.Text.StringBuilder(leaf.Length);
+        foreach (char c in leaf)
+        {
+            sanitized.Append(c < 32 || "\\/:*?\"<>|".IndexOf(c) >= 0 ? '_' : c);
+        }
+
+        leaf = sanitized.ToString();
+
+        leaf = leaf.Trim().Trim('.'); // no trailing dots/spaces (Windows quirk)
+
+        if (string.IsNullOrEmpty(leaf))
+        {
+            return "document";
+        }
+
+        // Avoid Windows reserved device names (CON, PRN, AUX, NUL, COM1-9, LPT1-9).
+        string stem = Path.GetFileNameWithoutExtension(leaf);
+        if (ReservedDeviceNames.Contains(stem))
+        {
+            leaf = "_" + leaf;
+        }
+
+        return leaf.Length > 200 ? leaf[^200..] : leaf;
+    }
+
+    private static readonly HashSet<string> ReservedDeviceNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "CON", "PRN", "AUX", "NUL",
+        "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+        "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
+    };
+
     /// <summary>Spec section 11/23: opening on the host leaves traces — say so.</summary>
     public void NoteExternalOpen(string name)
     {

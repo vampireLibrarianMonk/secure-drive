@@ -56,8 +56,7 @@ public partial class MainWindow : Window
 
         try
         {
-            string tempDirectory = ViewModel.EnsureOpenTempDirectory();
-            string targetPath = Path.Combine(tempDirectory, document.Name);
+            string targetPath = ViewModel.BuildSafeOpenTargetPath(document.Name);
             ViewModel.ExportDocumentTo(document.RelativePath, targetPath);
             ViewModel.NoteExternalOpen(document.Name);
 
