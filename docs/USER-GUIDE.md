@@ -135,11 +135,19 @@ Two ways, and you can freely use both:
 
 ### Manage and delete documents (card 3)
 
-**2 · Manage documents** lists everything in the archive. Select a document and
-click **DELETE SELECTED**; the button then reads **CLICK AGAIN TO CONFIRM
-DELETE** — click it a second time to remove the document. Deleting takes it out
-of the archive, the integrity manifest, and the search index at once. Deletion
-is permanent: there is no undo inside the archive.
+**3 · Manage documents** lists everything in the archive. Select a document to
+reveal the edit panel, where you can:
+
+- **Rename** it (edit the name and click RENAME);
+- **Move** it to another category (choose a category and click MOVE);
+- **Replace** its contents (click REPLACE FILE… and pick a new file);
+- **Delete** it — click **DELETE SELECTED**, then **CLICK AGAIN TO CONFIRM
+  DELETE**. Deletion is permanent: there is no undo inside the archive.
+
+Every one of these updates the archive, the integrity manifest, and the search
+index together, so browse and search stay consistent. A rename or move keeps the
+document's origin (a manually-added file stays manual and is not touched by
+folder imports).
 
 ### Verify the archive
 

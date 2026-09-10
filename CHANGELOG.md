@@ -21,9 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   category directly from Setup (indexed and searchable immediately), alongside
   the folder-source import. Individually-added files are marked
   `ManifestSource.Manual` and are preserved across folder-based updates.
-- **Delete documents**: a *Manage documents* card in Setup lists the archive and
-  removes a selected document from the vault, manifest, and search index (with a
-  two-step confirm).
+- **Document CRUD in Setup**: the *Manage documents* card can rename a document,
+  move it to another category, replace its contents, or delete it (two-step
+  confirm). Each updates the vault, manifest, and search index together;
+  rename/move preserve the document's provenance (ManifestSource).
 - **Headless UI tests** (`tests/EmergencyArchive.UI.Tests`, Avalonia.Headless):
   assert exactly one screen is visible per app state, guarding against
   screen-layering/binding regressions.
