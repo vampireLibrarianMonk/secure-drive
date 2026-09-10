@@ -12,7 +12,8 @@
     <AnalysisLevel>latest</AnalysisLevel>
 
     <!-- Product metadata embedded in assemblies and propagated into the SBOM. -->
-    <Version>0.1.0</Version>
+    <!-- Keep in sync with the VERSION file and CHANGELOG.md top entry. -->
+    <Version>0.2.0</Version>
     <Product>Emergency Archive</Product>
     <Authors>Emergency Archive Project</Authors>
     <Company>Emergency Archive Project</Company>

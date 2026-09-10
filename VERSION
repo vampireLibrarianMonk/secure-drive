@@ -1,0 +1,19 @@
+0.2.0
+
+Emergency Archive — semantic version (https://semver.org).
+
+The first line above is the authoritative version string, read by the release
+workflow (.github/workflows/release.yml) and kept in sync with
+<Version> in Directory.Build.props and the top entry in CHANGELOG.md.
+
+Bump rules (pre-1.0):
+  MAJOR (x.0.0)  reserved for the first stable public release (1.0.0).
+  MINOR (0.x.0)  user-visible features or notable changes.
+  PATCH (0.0.x)  bug fixes and small tweaks only.
+
+To cut a release:
+  1. Update this file's first line and the matching <Version> in
+     Directory.Build.props.
+  2. Move CHANGELOG "[Unreleased]" into a new "[x.y.z] - YYYY-MM-DD" section.
+  3. Commit, then tag:  git tag vX.Y.Z  &&  git push origin vX.Y.Z
+  The tag push triggers the build-and-release workflow.

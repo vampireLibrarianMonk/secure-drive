@@ -7,8 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [0.2.0] - 2026-09-10
+
 ### Added
 
+- **Downloadable releases**: a GitHub Actions release workflow
+  (`.github/workflows/release.yml`) builds self-contained Windows and Linux
+  packages on a version tag and attaches ready-to-use ZIPs to a GitHub Release.
+  A `VERSION` file is the authoritative semantic version.
+- **Role-based docs**: `START-HERE.md` routes users vs. developers; a
+  plain-language `docs/USER-GUIDE.md` (with screenshot placeholders under
+  `reference_images/`) covers download → set up the stick → password → add
+  documents → emergency search. README stays developer-focused.
 - **In-app first-run vault creation**: when a drive has no vault, the app shows
   a **CREATE YOUR ARCHIVE** screen (password + confirm, policy-checked) that
   creates the vault and unlocks straight in — no CLI needed
