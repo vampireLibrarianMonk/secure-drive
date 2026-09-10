@@ -33,8 +33,16 @@ public static class VaultConfigFile
         string signingInput = $"{headerSegment}.{payloadSegment}";
 
         byte[] rawKey = keys.RawMasterkey();
-        using var hmac = new HMACSHA256(rawKey);
-        byte[] signature = hmac.ComputeHash(System.Text.Encoding.ASCII.GetBytes(signingInput));
+        byte[] signature;
+        try
+        {
+            using var hmac = new HMACSHA256(rawKey);
+            signature = hmac.ComputeHash(System.Text.Encoding.ASCII.GetBytes(signingInput));
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(rawKey);
+        }
 
         File.WriteAllText(Path.Combine(vaultRootPath, FileName), $"{signingInput}.{VaultEncoding.EncodeJwtSegment(signature)}");
     }
@@ -63,16 +71,27 @@ public static class VaultConfigFile
             throw new VaultFormatException("vault.cryptomator is not valid JSON.", e);
         }
 
-        if (header.Alg is not ("HS256" or "HS384" or "HS512"))
-        {
-            throw new VaultFormatException($"Unsupported vault config signature algorithm: {header.Alg}");
-        }
-
+        // Select the HMAC by the declared algorithm (Cryptomator supports
+        // HS256/384/512). This also blocks "alg: none" and asymmetric-alg
+        // confusion: anything outside the allowlist is rejected before we
+        // touch the signature.
         byte[] rawKey = keys.RawMasterkey();
+        byte[] signingInput = System.Text.Encoding.ASCII.GetBytes($"{parts[0]}.{parts[1]}");
         byte[] expected;
-        using (HMACSHA256 hmac = new(rawKey))
+        try
         {
-            expected = hmac.ComputeHash(System.Text.Encoding.ASCII.GetBytes($"{parts[0]}.{parts[1]}"));
+            using HMAC hmac = header.Alg switch
+            {
+                "HS256" => new HMACSHA256(rawKey),
+                "HS384" => new HMACSHA384(rawKey),
+                "HS512" => new HMACSHA512(rawKey),
+                _ => throw new VaultFormatException($"Unsupported vault config signature algorithm: {header.Alg}"),
+            };
+            expected = hmac.ComputeHash(signingInput);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(rawKey);
         }
 
         byte[] actual = VaultEncoding.DecodeJwtSegment(parts[2]);

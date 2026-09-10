@@ -89,6 +89,62 @@ public class VaultContentTests
     }
 
     [Fact]
+    public void DecryptStream_WithReorderedChunks_Throws()
+    {
+        // Two full chunks; swapping them must fail because each chunk's AAD
+        // binds its 64-bit chunk index (defends against block reordering).
+        byte[] plaintext = new byte[VaultContent.ChunkPayloadSize * 2];
+        Random.Shared.NextBytes(plaintext);
+        using var plainStream = new MemoryStream(plaintext);
+        using var cipherStream = new MemoryStream();
+        VaultContent.EncryptStream(keys, plainStream, cipherStream);
+
+        byte[] bytes = cipherStream.ToArray();
+        byte[] swapped = new byte[bytes.Length];
+        Array.Copy(bytes, 0, swapped, 0, VaultContent.HeaderSize); // header stays
+        int c0 = VaultContent.HeaderSize;
+        int c1 = VaultContent.HeaderSize + VaultContent.ChunkSize;
+        Array.Copy(bytes, c1, swapped, c0, VaultContent.ChunkSize); // chunk1 -> slot0
+        Array.Copy(bytes, c0, swapped, c1, VaultContent.ChunkSize); // chunk0 -> slot1
+
+        using var swappedStream = new MemoryStream(swapped);
+        using var target = new MemoryStream();
+        Assert.Throws<VaultIntegrityException>(() => VaultContent.DecryptStream(keys, swappedStream, target));
+    }
+
+    [Fact]
+    public void EncryptStream_UsesAUniqueNoncePerChunk()
+    {
+        // Finding 1.1 invariant: within one file every 12-byte GCM nonce (the
+        // header nonce plus each chunk nonce) is distinct, so no (contentKey,
+        // nonce) pair repeats. Nonces are random per the Cryptomator format;
+        // this guards against an accidental future change to fixed nonces.
+        byte[] plaintext = new byte[VaultContent.ChunkPayloadSize * 3 + 100]; // 4 chunks
+        using var plainStream = new MemoryStream(plaintext);
+        using var cipherStream = new MemoryStream();
+        VaultContent.EncryptStream(keys, plainStream, cipherStream);
+
+        byte[] bytes = cipherStream.ToArray();
+        var nonces = new HashSet<string>
+        {
+            Convert.ToHexString(bytes.AsSpan(0, VaultContent.HeaderNonceSize)), // header nonce
+        };
+
+        int offset = VaultContent.HeaderSize;
+        int chunks = 0;
+        while (offset < bytes.Length)
+        {
+            int payload = Math.Min(VaultContent.ChunkPayloadSize, bytes.Length - offset - VaultContent.HeaderNonceSize - 16);
+            string nonce = Convert.ToHexString(bytes.AsSpan(offset, VaultContent.HeaderNonceSize));
+            Assert.True(nonces.Add(nonce), "duplicate GCM nonce within a single file");
+            offset += VaultContent.HeaderNonceSize + payload + 16;
+            chunks++;
+        }
+
+        Assert.Equal(4, chunks);
+    }
+
+    [Fact]
     public void DecryptStream_WithWrongKey_Throws()
     {
         using var plainStream = new MemoryStream(new byte[2048]);
