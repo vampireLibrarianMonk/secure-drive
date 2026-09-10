@@ -112,6 +112,10 @@ public sealed partial class SetupViewModel
     {
         SaveEstateLetterCommand.NotifyCanExecuteChanged();
         GenerateTemplateCommand.NotifyCanExecuteChanged();
+        // Document CRUD-edit commands also gate on IsBusy.
+        RenameDocumentCommand.NotifyCanExecuteChanged();
+        MoveDocumentCommand.NotifyCanExecuteChanged();
+        OnPropertyChanged(nameof(CanReplaceDocument));
     }
 
     /// <summary>Replaces the editable letter with a fresh template built from name/contact.</summary>

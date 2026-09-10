@@ -34,7 +34,14 @@ public sealed partial class SetupViewModel
 
     partial void OnDeleteArmedChanged(bool value) => OnPropertyChanged(nameof(DeleteButtonText));
 
-    partial void OnSelectedDocumentPathChanged(string? value) => DeleteArmed = false;
+    partial void OnSelectedDocumentPathChanged(string? value)
+    {
+        DeleteArmed = false;
+        SyncEditFieldsToSelection();
+        RenameDocumentCommand.NotifyCanExecuteChanged();
+        MoveDocumentCommand.NotifyCanExecuteChanged();
+        OnPropertyChanged(nameof(CanReplaceDocument));
+    }
 
     private bool CanDeleteDocument => !IsBusy && !string.IsNullOrEmpty(SelectedDocumentPath);
 

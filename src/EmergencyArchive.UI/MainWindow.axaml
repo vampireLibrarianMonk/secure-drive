@@ -424,7 +424,7 @@
                                    FontSize="11" Opacity="0.6" VerticalAlignment="Center" />
                     </Grid>
                     <TextBlock TextWrapping="Wrap" Opacity="0.85" FontSize="13"
-                               Text="Review what is in the archive and remove documents you no longer want. Deleting is permanent — there is no undo inside the archive." />
+                               Text="Review what is in the archive; select a document to rename it, move it to another category, replace its contents, or delete it. Deleting is permanent — there is no undo inside the archive." />
                     <ListBox ItemsSource="{Binding ManageableDocuments}"
                              SelectedItem="{Binding SelectedDocumentPath}" MaxHeight="180">
                         <ListBox.ItemTemplate>
@@ -433,8 +433,35 @@
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
-                    <Button Content="{Binding DeleteButtonText}" Command="{Binding DeleteDocumentCommand}"
-                            Padding="14,6" HorizontalAlignment="Left" />
+
+                    <!-- Edit the selected document (rename / move / replace) -->
+                    <Border BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                            BorderThickness="1" CornerRadius="6" Padding="12"
+                            IsVisible="{Binding SelectedDocumentPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="EDIT SELECTED" Classes="sectionHeading" />
+
+                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                                <TextBlock Text="Rename" Classes="fieldLabel" VerticalAlignment="Center" />
+                                <TextBox Grid.Column="1" Text="{Binding RenameText}" Watermark="New file name (with extension)" />
+                                <Button Grid.Column="2" Content="RENAME" Command="{Binding RenameDocumentCommand}" Padding="14,6" />
+                            </Grid>
+
+                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                                <TextBlock Text="Move to" Classes="fieldLabel" VerticalAlignment="Center" />
+                                <ComboBox Grid.Column="1" ItemsSource="{Binding ImportCategories}"
+                                          SelectedItem="{Binding MoveTargetCategory}" HorizontalAlignment="Stretch" />
+                                <Button Grid.Column="2" Content="MOVE" Command="{Binding MoveDocumentCommand}" Padding="14,6" />
+                            </Grid>
+
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <Button Content="REPLACE FILE…" Click="OnReplaceDocumentClicked"
+                                        IsEnabled="{Binding CanReplaceDocument}" Padding="14,6" />
+                                <Button Content="{Binding DeleteButtonText}" Command="{Binding DeleteDocumentCommand}"
+                                        Padding="14,6" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
             </Border>
 

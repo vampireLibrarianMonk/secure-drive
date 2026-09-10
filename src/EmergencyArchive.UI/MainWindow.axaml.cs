@@ -165,6 +165,32 @@ public partial class MainWindow : Window
         }
     }
 
+    private async void OnReplaceDocumentClicked(object? sender, RoutedEventArgs e)
+    {
+        var setup = ViewModel.Setup;
+        if (setup is null)
+        {
+            return;
+        }
+
+        var storage = TopLevel.GetTopLevel(this)?.StorageProvider;
+        if (storage is null)
+        {
+            return;
+        }
+
+        IReadOnlyList<IStorageFile> files = await storage.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Choose the replacement file",
+            AllowMultiple = false,
+        });
+
+        if (files.Count > 0 && files[0].TryGetLocalPath() is { } localPath)
+        {
+            setup.ReplaceDocumentFromPath(localPath);
+        }
+    }
+
     private void OnSetupDoneClicked(object? sender, RoutedEventArgs e)
     {
         ViewModel.ExitSetup();
