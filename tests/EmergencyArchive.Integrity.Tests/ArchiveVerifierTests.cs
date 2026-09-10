@@ -86,6 +86,36 @@ public class ArchiveVerifierTests
     }
 
     [Fact]
+    public void Verify_UnreadableDocument_IsReportedCorrupt_AndScanContinues()
+    {
+        // Finding 2.1: a document that fails to open/decrypt (tampered
+        // ciphertext throws) must be reported as corrupt WITHOUT aborting the
+        // scan — the other documents must still be verified.
+        var manifest = ManifestWithEntries(
+            Entry("a.txt", "content a"),
+            Entry("tampered.txt", "content tampered"),
+            Entry("c.txt", "content c"));
+        var stored = new[] { "a.txt", "tampered.txt", "c.txt" };
+
+        ArchiveVerificationReport report = ArchiveVerifier.Verify(
+            manifest,
+            stored,
+            path => path switch
+            {
+                "a.txt" => new MemoryStream(Encoding.UTF8.GetBytes("content a")),
+                "c.txt" => new MemoryStream(Encoding.UTF8.GetBytes("content c")),
+                _ => throw new InvalidOperationException("simulated decryption/authentication failure"),
+            },
+            infrastructurePaths: []);
+
+        Assert.False(report.Healthy);
+        Assert.Equal("tampered.txt", Assert.Single(report.Corrupt));
+        Assert.Equal(3, report.DocumentsChecked);          // scan did not abort
+        Assert.Contains("a.txt", report.Valid);
+        Assert.Contains("c.txt", report.Valid);             // files after the bad one still checked
+    }
+
+    [Fact]
     public void Verify_StaleIndexEntries_BreakHealth()
     {
         var manifest = ManifestWithEntries(Entry("a.txt", "content a"));

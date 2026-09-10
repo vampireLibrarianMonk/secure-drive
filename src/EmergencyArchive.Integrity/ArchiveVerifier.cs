@@ -50,9 +50,29 @@ public static class ArchiveVerifier
                 continue;
             }
 
-            using Stream stream = openContent(entry.RelativePath);
-            string hash = Sha256.ComputeHash(stream);
-            bytesChecked += stream.Length;
+            // A document that cannot be read, decrypted, or authenticated
+            // (tampered ciphertext, truncation, I/O error) must be REPORTED as
+            // corrupt, not abort the whole scan — verification is the user's
+            // tamper detector, so one bad file must never hide the state of the
+            // rest. Any failure to produce a hash for this entry counts as
+            // corrupt; this catch is scoped to a single entry's read+hash only.
+            string hash;
+            try
+            {
+                using Stream stream = openContent(entry.RelativePath);
+                hash = Sha256.ComputeHash(stream);
+                bytesChecked += stream.Length;
+            }
+            catch (Exception)
+            {
+                if (corrupt.Count < maxReportedIssues)
+                {
+                    corrupt.Add(entry.RelativePath);
+                }
+
+                documentsChecked++;
+                continue;
+            }
 
             if (string.Equals(hash, entry.Sha256, StringComparison.OrdinalIgnoreCase))
             {
