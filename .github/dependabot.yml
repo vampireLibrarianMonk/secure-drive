@@ -1,0 +1,32 @@
+version: 2
+
+# Supply-chain currency (security reviews 5 & due diligence): Dependabot opens
+# reviewed PRs to keep dependencies and CI actions current. Combined with
+# central package pinning (Directory.Packages.props) and the nuget.org-only
+# source mapping (nuget.config), this keeps the dependency surface small,
+# reviewable, and up to date.
+
+updates:
+  # .NET / NuGet packages (Avalonia, BouncyCastle, PdfPig, SQLite, test libs).
+  - package-ecosystem: nuget
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    groups:
+      avalonia:
+        patterns:
+          - "Avalonia*"
+      test-tooling:
+        patterns:
+          - "xunit*"
+          - "Microsoft.NET.Test.Sdk"
+
+  # GitHub Actions used by CI and the release workflow. Dependabot pins actions
+  # to commit SHAs and keeps them updated (addresses mutable-tag supply-chain
+  # risk for third-party actions such as softprops/action-gh-release).
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
