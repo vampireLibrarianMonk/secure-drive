@@ -3,6 +3,7 @@
         xmlns:vm="clr-namespace:EmergencyArchive.UI"
         xmlns:core="clr-namespace:EmergencyArchive.Core;assembly=EmergencyArchive.Core"
         x:Class="EmergencyArchive.UI.MainWindow"
+        x:Name="Root"
         x:DataType="vm:MainWindowViewModel"
         Title="EMERGENCY ARCHIVE"
         Width="1080" Height="720"
@@ -223,13 +224,14 @@
          the bottom with its own scroll, while the numbered task cards scroll in
          the middle. Separating the two scroll regions prevents the log from
          being clipped and stops nested scroll wheels from fighting. -->
-    <DockPanel x:Name="SetupScreen"
-               IsVisible="{Binding IsSetupMode}"
-               Margin="0">
+    <Panel x:Name="SetupScreen"
+           IsVisible="{Binding IsSetupMode}"
+           Margin="0">
 
       <!-- Inner DockPanel binds against the Setup view model; the OUTER
-           DockPanel's IsVisible stays bound to the MainWindowViewModel
-           (IsSetupMode) so the whole screen shows/hides correctly. -->
+           Panel's IsVisible stays bound to the MainWindowViewModel
+           (IsSetupMode) so the whole screen shows/hides correctly. The cards
+           ScrollViewer inside hides itself when the credential viewer is open. -->
       <DockPanel DataContext="{Binding Setup}" x:DataType="vm:SetupViewModel">
 
         <!-- Fixed header -->
@@ -285,9 +287,11 @@
             </StackPanel>
         </Border>
 
-        <!-- Scrollable task cards, in a numbered top-to-bottom flow -->
+        <!-- Scrollable task cards, in a numbered top-to-bottom flow.
+             Hidden while the credential viewer sub-screen is open. -->
         <ScrollViewer HorizontalScrollBarVisibility="Disabled"
                       VerticalScrollBarVisibility="Auto"
+                      IsVisible="{Binding IsSetupCards, ElementName=Root}"
                       Padding="20,14,20,20">
           <StackPanel Spacing="14" MaxWidth="980" HorizontalAlignment="Stretch">
 
@@ -494,9 +498,128 @@
                 </StackPanel>
             </Border>
 
+            <!-- 6. Password manager: opens the in-app credential viewer (native,
+                 nothing installed, nothing written to disk). Command lives on the
+                 root MainWindowViewModel, reached via ElementName. -->
+            <Border Classes="card">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="6 · PASSWORD MANAGER" Classes="sectionHeading" />
+                    <TextBlock TextWrapping="Wrap" Opacity="0.85" FontSize="13"
+                               Text="Store and look up website logins inside the vault. Values stay hidden until you reveal them, and nothing is written to disk in the clear." />
+                    <Button Content="OPEN PASSWORD MANAGER"
+                            Command="{Binding OpenCredentialsCommand, ElementName=Root}"
+                            Classes="primary" HorizontalAlignment="Left" />
+                </StackPanel>
+            </Border>
+
           </StackPanel>
         </ScrollViewer>
       </DockPanel>
-    </DockPanel>
+
+      <!-- Credential viewer sub-screen: native Avalonia, overlays the Setup
+           cards when open. DataContext is the root VM's Credentials. -->
+      <DockPanel x:Name="CredentialsScreen"
+                 IsVisible="{Binding IsCredentialsMode}"
+                 Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+        <!-- Inner content binds against the CredentialViewModel; the OUTER
+             DockPanel keeps the root DataContext so IsVisible (IsCredentialsMode)
+             resolves correctly, mirroring the Setup screen structure. -->
+        <DockPanel DataContext="{Binding Credentials}" x:DataType="vm:CredentialViewModel">
+
+        <!-- Header with search + close -->
+        <Border DockPanel.Dock="Top" Padding="20,14,20,12"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                BorderThickness="0,0,0,1">
+          <StackPanel Spacing="10" MaxWidth="980" HorizontalAlignment="Stretch">
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                <TextBlock Text="PASSWORD MANAGER" Classes="screenTitle" />
+                <TextBlock Text="Values hidden by default" FontSize="12" Opacity="0.6"
+                           VerticalAlignment="Center" />
+              </StackPanel>
+              <Button Grid.Column="1" Content="CLOSE"
+                      Command="{Binding CloseCredentialsCommand, ElementName=Root}"
+                      Padding="24,8" FontWeight="SemiBold"
+                      x:CompileBindings="False" />
+            </Grid>
+            <TextBox Text="{Binding SearchText}"
+                     Watermark="Search by website or username…" />
+            <TextBlock Text="{Binding Summary}" FontSize="12" Opacity="0.7" />
+          </StackPanel>
+        </Border>
+
+        <!-- Empty state -->
+        <TextBlock DockPanel.Dock="Top" Margin="20,16"
+                   IsVisible="{Binding IsEmpty}" TextWrapping="Wrap" Opacity="0.75"
+                   Text="No credentials are stored yet. A future update will let you import a KeePass (.kdbx) file or add entries directly." />
+
+        <!-- Credential cards -->
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                      VerticalScrollBarVisibility="Auto"
+                      Padding="20,14,20,20">
+          <ItemsControl ItemsSource="{Binding Items}" MaxWidth="980" HorizontalAlignment="Stretch">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:CredentialItemViewModel">
+                <Border Classes="card" Margin="0,0,0,14">
+                  <StackPanel Spacing="10">
+                    <TextBlock Text="{Binding Site}" FontWeight="SemiBold" FontSize="15" />
+
+                    <!-- Username -->
+                    <Grid ColumnDefinitions="110,*,Auto">
+                      <TextBlock Text="Username" Classes="fieldLabel" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="1" Text="{Binding Username}"
+                                 VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                      <Button Grid.Column="2" Content="Copy" Padding="10,4"
+                              Click="OnCopyUsernameClicked" Tag="{Binding Username}" />
+                    </Grid>
+
+                    <!-- Password (obfuscated) -->
+                    <Grid ColumnDefinitions="110,*,Auto,Auto" ColumnSpacing="6">
+                      <TextBlock Text="Password" Classes="fieldLabel" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="1" Text="{Binding Password.Display}"
+                                 FontFamily="Cascadia Mono, Consolas, monospace"
+                                 VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                      <ToggleButton Grid.Column="2" Padding="10,4"
+                                    Content="{Binding Password.RevealButtonText}"
+                                    IsChecked="{Binding Password.IsRevealed}" />
+                      <Button Grid.Column="3" Content="Copy" Padding="10,4"
+                              Click="OnCopySecretClicked" Tag="{Binding Password}" />
+                    </Grid>
+
+                    <!-- Extras toggle -->
+                    <ToggleButton IsChecked="{Binding IsExtrasExpanded}"
+                                  IsVisible="{Binding HasExtras}"
+                                  HorizontalAlignment="Left" Padding="10,4"
+                                  Content="{Binding ExtrasCount, StringFormat='More fields ({0})'}" />
+
+                    <!-- Extras (each obfuscated with reveal + copy) -->
+                    <ItemsControl ItemsSource="{Binding Extras}"
+                                  IsVisible="{Binding IsExtrasExpanded}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:SecretFieldViewModel">
+                          <Grid ColumnDefinitions="110,*,Auto,Auto" ColumnSpacing="6" Margin="0,3">
+                            <TextBlock Text="{Binding Label}" Classes="fieldLabel"
+                                       VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Grid.Column="1" Text="{Binding Display}"
+                                       FontFamily="Cascadia Mono, Consolas, monospace"
+                                       VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                            <ToggleButton Grid.Column="2" Padding="10,4"
+                                          Content="{Binding RevealButtonText}"
+                                          IsChecked="{Binding IsRevealed}" />
+                            <Button Grid.Column="3" Content="Copy" Padding="10,4"
+                                    Click="OnCopySecretClicked" Tag="{Binding}" />
+                          </Grid>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+        </DockPanel>
+      </DockPanel>
+    </Panel>
     </Panel>
 </Window>

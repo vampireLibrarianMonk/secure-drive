@@ -94,10 +94,21 @@ public partial class MainWindowViewModel : ObservableObject
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsBrowsing))]
+    [NotifyPropertyChangedFor(nameof(IsSetupCards))]
     private bool isSetupMode;
+
+    /// <summary>Credential viewer (a sub-screen of Setup Mode).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsSetupCards))]
+    private bool isCredentialsMode;
+
+    public CredentialViewModel? Credentials { get; private set; }
 
     /// <summary>Browse screen is visible while unlocked and not in Setup Mode.</summary>
     public bool IsBrowsing => IsUnlocked && !IsSetupMode;
+
+    /// <summary>The Setup cards show while in Setup but not viewing credentials.</summary>
+    public bool IsSetupCards => IsSetupMode && !IsCredentialsMode;
 
     public SetupViewModel? Setup => setup;
 
@@ -320,10 +331,62 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     public void ExitSetup()
     {
+        CloseCredentials();
         IsSetupMode = false;
         setup = null;
         LoadDocuments();
         SearchCommand.NotifyCanExecuteChanged();
+    }
+
+    /// <summary>
+    /// Opens the in-app password manager viewer (native Avalonia) as a sub-screen
+    /// of Setup. Loads the credential database from the encrypted vault; nothing
+    /// is written to disk. Every step is recorded to the activity log.
+    /// </summary>
+    [RelayCommand]
+    public void OpenCredentials()
+    {
+        if (session is null)
+        {
+            AppLog.Handled(
+                "OpenCredentials",
+                new InvalidOperationException("No unlocked vault session."));
+            return;
+        }
+
+        operationLog?.Append("Credentials", "Opening password manager.");
+        try
+        {
+            Credentials = new CredentialViewModel(session);
+            OnPropertyChanged(nameof(Credentials));
+            IsCredentialsMode = true;
+            operationLog?.Append("Credentials", "Password manager opened.");
+        }
+        catch (Exception e) when (e is VaultException or IOException)
+        {
+            // Surface the failure to the activity log rather than swallowing it;
+            // the viewer simply does not open.
+            AppLog.Handled("OpenCredentials", e);
+            operationLog?.Append("Credentials", "Password manager could not be opened.");
+            Credentials = null;
+            OnPropertyChanged(nameof(Credentials));
+            IsCredentialsMode = false;
+        }
+    }
+
+    /// <summary>Closes the credential viewer and returns to the Setup cards.</summary>
+    [RelayCommand]
+    public void CloseCredentials()
+    {
+        if (!IsCredentialsMode && Credentials is null)
+        {
+            return;
+        }
+
+        IsCredentialsMode = false;
+        Credentials = null;
+        OnPropertyChanged(nameof(Credentials));
+        operationLog?.Append("Credentials", "Password manager closed.");
     }
 
     private bool CanEnterSetup => IsUnlocked && !IsBusy && !IsIndexing;
@@ -332,6 +395,9 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     public void Lock()
     {
+        IsCredentialsMode = false;
+        Credentials = null;
+        OnPropertyChanged(nameof(Credentials));
         IsSetupMode = false;
         setup = null;
         CleanupTempExports();
@@ -454,6 +520,19 @@ public partial class MainWindowViewModel : ObservableObject
     {
         StatusMessage = $"Opened '{name}'. Opening a document can leave traces on this computer (temporary files, recent-file lists).";
         operationLog?.Append("Documents", $"Document opened on host: {name} (may leave traces on this computer).");
+        if (session is not null && operationLog is not null)
+        {
+            OperationLogStore.Save(session, operationLog);
+        }
+    }
+
+    /// <summary>
+    /// Records that a credential value was copied to the clipboard. Only the
+    /// field label is logged — never the secret value itself.
+    /// </summary>
+    public void NoteCredentialCopied(string label)
+    {
+        operationLog?.Append("Credentials", $"Copied '{label}' to the clipboard.");
         if (session is not null && operationLog is not null)
         {
             OperationLogStore.Save(session, operationLog);

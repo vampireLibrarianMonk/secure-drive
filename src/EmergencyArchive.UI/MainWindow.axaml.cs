@@ -36,6 +36,47 @@ public partial class MainWindow : Window
 
     private void FocusPasswordBox() => PasswordBox.Focus();
 
+    /// <summary>Copies a plain (non-secret) field such as the username.</summary>
+    private void OnCopyUsernameClicked(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Control { Tag: string value })
+        {
+            CopyToClipboard(value, "Username");
+        }
+    }
+
+    /// <summary>Copies a secret field's real value (works whether revealed or hidden).</summary>
+    private void OnCopySecretClicked(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Control { Tag: SecretFieldViewModel secret })
+        {
+            CopyToClipboard(secret.CopyValue, secret.Label);
+        }
+    }
+
+    private async void CopyToClipboard(string value, string label)
+    {
+        try
+        {
+            var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
+            if (clipboard is null)
+            {
+                ViewModel.StatusMessage = "Clipboard is unavailable on this system.";
+                return;
+            }
+
+            await clipboard.SetTextAsync(value);
+            ViewModel.NoteCredentialCopied(label);
+            ViewModel.StatusMessage = $"Copied '{label}' to the clipboard.";
+        }
+        catch (Exception ex)
+        {
+            // Never swallow silently: record it and tell the user.
+            AppLog.Handled("CopyToClipboard", ex);
+            ViewModel.StatusMessage = $"Could not copy '{label}': {ex.Message}";
+        }
+    }
+
     private void OnOpenClicked(object? sender, RoutedEventArgs e) => OpenSelectedDocument();
 
     private void OnDocumentDoubleTapped(object? sender, Avalonia.Input.TappedEventArgs e)
