@@ -524,7 +524,8 @@
         <!-- Inner content binds against the CredentialViewModel; the OUTER
              DockPanel keeps the root DataContext so IsVisible (IsCredentialsMode)
              resolves correctly, mirroring the Setup screen structure. -->
-        <DockPanel DataContext="{Binding Credentials}" x:DataType="vm:CredentialViewModel">
+        <DockPanel x:Name="CredentialsRoot" DataContext="{Binding Credentials}"
+                   x:DataType="vm:CredentialViewModel">
 
         <!-- Header with search + close -->
         <Border DockPanel.Dock="Top" Padding="20,14,20,12"
@@ -537,32 +538,49 @@
                 <TextBlock Text="Values hidden by default" FontSize="12" Opacity="0.6"
                            VerticalAlignment="Center" />
               </StackPanel>
-              <Button Grid.Column="1" Content="CLOSE"
-                      Command="{Binding CloseCredentialsCommand, ElementName=Root}"
-                      Padding="24,8" FontWeight="SemiBold"
-                      x:CompileBindings="False" />
+              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                <Button Content="ADD" Command="{Binding AddCommand}"
+                        Classes="primary" Padding="20,8" FontWeight="SemiBold"
+                        IsVisible="{Binding !IsEditing}" />
+                <Button Content="CLOSE"
+                        Command="{Binding CloseCredentialsCommand, ElementName=Root}"
+                        Padding="24,8" FontWeight="SemiBold"
+                        x:CompileBindings="False" />
+              </StackPanel>
             </Grid>
-            <TextBox Text="{Binding SearchText}"
+            <TextBox Text="{Binding SearchText}" IsVisible="{Binding !IsEditing}"
                      Watermark="Search by website or username…" />
-            <TextBlock Text="{Binding Summary}" FontSize="12" Opacity="0.7" />
+            <TextBlock Text="{Binding Summary}" FontSize="12" Opacity="0.7"
+                       IsVisible="{Binding !IsEditing}" />
           </StackPanel>
         </Border>
 
-        <!-- Empty state -->
+        <!-- Empty state (hidden while the editor is open) -->
         <TextBlock DockPanel.Dock="Top" Margin="20,16"
                    IsVisible="{Binding IsEmpty}" TextWrapping="Wrap" Opacity="0.75"
-                   Text="No credentials are stored yet. A future update will let you import a KeePass (.kdbx) file or add entries directly." />
+                   Text="No credentials are stored yet. Click ADD to create one. Importing a KeePass (.kdbx) file is coming soon." />
 
         <!-- Credential cards -->
-        <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+        <ScrollViewer x:Name="CredentialsList"
+                      HorizontalScrollBarVisibility="Disabled"
                       VerticalScrollBarVisibility="Auto"
+                      IsVisible="{Binding !IsEditing}"
                       Padding="20,14,20,20">
           <ItemsControl ItemsSource="{Binding Items}" MaxWidth="980" HorizontalAlignment="Stretch">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:CredentialItemViewModel">
                 <Border Classes="card" Margin="0,0,0,14">
                   <StackPanel Spacing="10">
-                    <TextBlock Text="{Binding Site}" FontWeight="SemiBold" FontSize="15" />
+                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
+                      <TextBlock Text="{Binding Site}" FontWeight="SemiBold" FontSize="15"
+                                 VerticalAlignment="Center" />
+                      <Button Grid.Column="1" Content="Edit" Padding="12,4"
+                              Command="{Binding #CredentialsRoot.DataContext.EditCommand}"
+                              CommandParameter="{Binding}" />
+                      <Button Grid.Column="2" Content="Delete" Padding="12,4"
+                              Command="{Binding #CredentialsRoot.DataContext.DeleteCommand}"
+                              CommandParameter="{Binding}" />
+                    </Grid>
 
                     <!-- Username -->
                     <Grid ColumnDefinitions="110,*,Auto">
@@ -617,6 +635,79 @@
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
+        </ScrollViewer>
+
+        <!-- Add / edit form: shown in place of the list while editing. Binds to
+             the Editor sub view model on the CredentialViewModel. -->
+        <ScrollViewer x:Name="CredentialsEditor"
+                      IsVisible="{Binding IsEditing}"
+                      HorizontalScrollBarVisibility="Disabled"
+                      VerticalScrollBarVisibility="Auto"
+                      Padding="20,14,20,20">
+          <StackPanel MaxWidth="720" HorizontalAlignment="Stretch"
+                      DataContext="{Binding Editor}" x:DataType="vm:CredentialEditorViewModel">
+            <Border Classes="card">
+              <StackPanel Spacing="12">
+                <TextBlock Text="{Binding Title}" Classes="sectionHeading" />
+
+                <StackPanel Spacing="4">
+                  <TextBlock Text="Website or app name" Classes="fieldLabel" />
+                  <TextBox Text="{Binding Site}" Watermark="e.g. bank.example.com" />
+                </StackPanel>
+
+                <StackPanel Spacing="4">
+                  <TextBlock Text="Username" Classes="fieldLabel" />
+                  <TextBox Text="{Binding Username}" Watermark="e.g. jane@example.com" />
+                </StackPanel>
+
+                <StackPanel Spacing="4">
+                  <TextBlock Text="Password" Classes="fieldLabel" />
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                    <TextBox Text="{Binding Password}"
+                             PasswordChar="&#x25CF;"
+                             RevealPassword="{Binding IsPasswordVisible}"
+                             FontFamily="Cascadia Mono, Consolas, monospace" />
+                    <ToggleButton Grid.Column="1" Padding="12,4" Content="Show"
+                                  IsChecked="{Binding IsPasswordVisible}" />
+                  </Grid>
+                </StackPanel>
+
+                <!-- Extra fields -->
+                <StackPanel Spacing="6">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Text="Extra fields" Classes="fieldLabel" VerticalAlignment="Center" />
+                    <Button Grid.Column="1" Content="Add field" Padding="12,4"
+                            Command="{Binding AddExtraCommand}" />
+                  </Grid>
+                  <ItemsControl ItemsSource="{Binding Extras}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:ExtraFieldEditorViewModel">
+                        <Grid ColumnDefinitions="*,*,Auto" ColumnSpacing="6" Margin="0,3">
+                          <TextBox Text="{Binding Key}" Watermark="Field name (e.g. PIN)" />
+                          <TextBox Grid.Column="1" Text="{Binding Value}" Watermark="Value" />
+                          <Button Grid.Column="2" Content="Remove" Padding="12,4"
+                                  Command="{Binding #CredentialsRoot.DataContext.Editor.RemoveExtraCommand}"
+                                  CommandParameter="{Binding}" />
+                        </Grid>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+
+                <TextBlock Text="{Binding Error}" Foreground="#D9534F"
+                           TextWrapping="Wrap" IsVisible="{Binding HasError}" />
+
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                  <Button Content="SAVE"
+                          Command="{Binding #CredentialsRoot.DataContext.SaveCommand}"
+                          Classes="primary" Padding="24,8" FontWeight="SemiBold" />
+                  <Button Content="CANCEL"
+                          Command="{Binding #CredentialsRoot.DataContext.CancelEditCommand}"
+                          Padding="24,8" />
+                </StackPanel>
+              </StackPanel>
+            </Border>
+          </StackPanel>
         </ScrollViewer>
         </DockPanel>
       </DockPanel>

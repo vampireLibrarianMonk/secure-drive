@@ -149,6 +149,146 @@ public sealed class CredentialViewerTests : IDisposable
         Assert.Equal("RCODE-123", recovery.CopyValue);
     }
 
+    // --- CRUD ---------------------------------------------------------------
+
+    [Fact]
+    public void Add_PersistsAndReloads()
+    {
+        using (VaultSession session = VaultStore.Unlock(vaultDir, Password))
+        {
+            var viewer = new CredentialViewModel(session);
+            viewer.AddCommand.Execute(null);
+            Assert.True(viewer.IsEditing);
+
+            viewer.Editor!.Site = "bank.example";
+            viewer.Editor.Username = "alice";
+            viewer.Editor.Password = "s3cret";
+            viewer.SaveCommand.Execute(null);
+
+            Assert.False(viewer.IsEditing);
+            Assert.Single(viewer.Items);
+        }
+
+        // Reload from a fresh session: the entry survived (encrypted on disk).
+        using (VaultSession reload = VaultStore.Unlock(vaultDir, Password))
+        {
+            var reloaded = new CredentialViewModel(reload);
+            Assert.Single(reloaded.Items);
+            Assert.Equal("bank.example", reloaded.Items[0].Site);
+            Assert.Equal("alice", reloaded.Items[0].Username);
+            Assert.Equal("s3cret", reloaded.Items[0].Password.CopyValue);
+        }
+    }
+
+    [Fact]
+    public void Add_WithBlankSite_DoesNotSave()
+    {
+        using VaultSession session = VaultStore.Unlock(vaultDir, Password);
+        var viewer = new CredentialViewModel(session);
+
+        viewer.AddCommand.Execute(null);
+        viewer.Editor!.Site = "   ";
+        viewer.SaveCommand.Execute(null);
+
+        Assert.True(viewer.IsEditing);              // still on the form
+        Assert.True(viewer.Editor.HasError);
+        Assert.Empty(viewer.Items);
+    }
+
+    [Fact]
+    public void Edit_UpdatesInPlace_AndPersists()
+    {
+        CredentialDatabase db = CredentialDatabase.Empty
+            .With(Credential.Create("old.example", "user", "oldpw"));
+
+        string id;
+        using (VaultSession save = VaultStore.Unlock(vaultDir, Password))
+        {
+            CredentialStore.Save(save, db);
+        }
+
+        using (VaultSession session = VaultStore.Unlock(vaultDir, Password))
+        {
+            var viewer = new CredentialViewModel(session);
+            CredentialItemViewModel row = viewer.Items[0];
+            id = row.Id;
+
+            viewer.EditCommand.Execute(row);
+            Assert.False(viewer.Editor!.IsNew);
+            viewer.Editor.Site = "new.example";
+            viewer.Editor.Password = "newpw";
+            viewer.SaveCommand.Execute(null);
+
+            Assert.Single(viewer.Items);
+            Assert.Equal("new.example", viewer.Items[0].Site);
+            Assert.Equal(id, viewer.Items[0].Id);   // same identity, replaced in place
+        }
+
+        using (VaultSession reload = VaultStore.Unlock(vaultDir, Password))
+        {
+            var reloaded = new CredentialViewModel(reload);
+            Assert.Single(reloaded.Items);
+            Assert.Equal("new.example", reloaded.Items[0].Site);
+            Assert.Equal("newpw", reloaded.Items[0].Password.CopyValue);
+        }
+    }
+
+    [Fact]
+    public void Delete_RemovesAndPersists()
+    {
+        CredentialDatabase db = CredentialDatabase.Empty
+            .With(Credential.Create("a.example", "u1", "p1"))
+            .With(Credential.Create("b.example", "u2", "p2"));
+
+        using (VaultSession save = VaultStore.Unlock(vaultDir, Password))
+        {
+            CredentialStore.Save(save, db);
+        }
+
+        using (VaultSession session = VaultStore.Unlock(vaultDir, Password))
+        {
+            var viewer = new CredentialViewModel(session);
+            CredentialItemViewModel toDelete = viewer.Items.First(i => i.Site == "a.example");
+            viewer.DeleteCommand.Execute(toDelete);
+
+            Assert.Single(viewer.Items);
+            Assert.Equal("b.example", viewer.Items[0].Site);
+        }
+
+        using (VaultSession reload = VaultStore.Unlock(vaultDir, Password))
+        {
+            var reloaded = new CredentialViewModel(reload);
+            Assert.Single(reloaded.Items);
+            Assert.Equal("b.example", reloaded.Items[0].Site);
+        }
+    }
+
+    [Fact]
+    public void Add_WithExtras_RoundTripsThroughStore()
+    {
+        using (VaultSession session = VaultStore.Unlock(vaultDir, Password))
+        {
+            var viewer = new CredentialViewModel(session);
+            viewer.AddCommand.Execute(null);
+            viewer.Editor!.Site = "vault.example";
+            viewer.Editor.AddExtraCommand.Execute(null);
+            viewer.Editor.Extras[0].Key = "Recovery code";
+            viewer.Editor.Extras[0].Value = "RC-999";
+            // A blank-key extra row must be dropped on save.
+            viewer.Editor.AddExtraCommand.Execute(null);
+            viewer.SaveCommand.Execute(null);
+        }
+
+        using (VaultSession reload = VaultStore.Unlock(vaultDir, Password))
+        {
+            var reloaded = new CredentialViewModel(reload);
+            CredentialItemViewModel item = reloaded.Items[0];
+            Assert.Equal(1, item.ExtrasCount);
+            Assert.Equal("Recovery code", item.Extras[0].Label);
+            Assert.Equal("RC-999", item.Extras[0].CopyValue);
+        }
+    }
+
     [AvaloniaFact]
     public void CredentialsScreen_IsHiddenByDefault_AndVisibleWhenOpened()
     {

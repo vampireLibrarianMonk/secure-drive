@@ -36,7 +36,9 @@ $includeExtensions = @('.cs', '.axaml', '.ps1', '.md', '.json', '.yml', '.yaml',
 
 $rules = @(
     @{ Name = 'private key block';       Pattern = '-----BEGIN [A-Z ]*PRIVATE KEY-----' },
-    @{ Name = 'hardcoded password';      Pattern = '(?i)(password|passwd|pwd)\s*[=:]\s*["''][^''"]{6,}["'']' },
+    # Excludes XAML/binding expressions (e.g. RevealPassword="{Binding ...}") and
+    # empty markup extensions — a real hardcoded secret is never a binding.
+    @{ Name = 'hardcoded password';      Pattern = '(?i)(password|passwd|pwd)\s*[=:]\s*["''](?!\{)[^''"]{6,}["'']' },
     @{ Name = 'hardcoded api key';       Pattern = '(?i)(apikey|api[_-]key|secret[_-]key)\s*[=:]\s*["''][A-Za-z0-9+/_-]{12,}["'']' },
     @{ Name = 'aws access key';          Pattern = 'AKIA[0-9A-Z]{16}' },
     @{ Name = 'github token';            Pattern = 'gh[pousr]_[A-Za-z0-9]{20,}' },

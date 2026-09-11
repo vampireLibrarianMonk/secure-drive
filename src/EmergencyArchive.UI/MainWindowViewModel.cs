@@ -357,7 +357,7 @@ public partial class MainWindowViewModel : ObservableObject
         operationLog?.Append("Credentials", "Opening password manager.");
         try
         {
-            Credentials = new CredentialViewModel(session);
+            Credentials = new CredentialViewModel(session, LogCredentialActivity);
             OnPropertyChanged(nameof(Credentials));
             IsCredentialsMode = true;
             operationLog?.Append("Credentials", "Password manager opened.");
@@ -520,6 +520,20 @@ public partial class MainWindowViewModel : ObservableObject
     {
         StatusMessage = $"Opened '{name}'. Opening a document can leave traces on this computer (temporary files, recent-file lists).";
         operationLog?.Append("Documents", $"Document opened on host: {name} (may leave traces on this computer).");
+        if (session is not null && operationLog is not null)
+        {
+            OperationLogStore.Save(session, operationLog);
+        }
+    }
+
+    /// <summary>
+    /// Sink passed to the credential viewer so add/edit/delete operations are
+    /// recorded in the encrypted activity log. Callers pass a site-scoped
+    /// message with no secret values.
+    /// </summary>
+    private void LogCredentialActivity(string message)
+    {
+        operationLog?.Append("Credentials", message);
         if (session is not null && operationLog is not null)
         {
             OperationLogStore.Save(session, operationLog);

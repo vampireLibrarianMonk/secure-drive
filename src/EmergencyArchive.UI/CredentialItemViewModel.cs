@@ -44,6 +44,7 @@ public sealed partial class CredentialItemViewModel : ObservableObject
 {
     public CredentialItemViewModel(Credential credential)
     {
+        Id = credential.Id;
         Site = string.IsNullOrEmpty(credential.Site) ? "(no site)" : credential.Site;
         Username = credential.Username ?? string.Empty;
         Password = new SecretFieldViewModel("Password", credential.Password ?? string.Empty);
@@ -53,6 +54,9 @@ public sealed partial class CredentialItemViewModel : ObservableObject
             Extras.Add(new SecretFieldViewModel(field.Key, field.Value));
         }
     }
+
+    /// <summary>Stable identifier used to find/update/delete this credential in the store.</summary>
+    public string Id { get; }
 
     public string Site { get; }
 
