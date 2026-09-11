@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# Emergency Archive pre-commit hook.
+#
+# Fast, local gate before a commit is created:
+#   1. Secret scan (scripts/scan-secrets.ps1) - blocks committing credentials.
+#   2. Code format/style check (dotnet format --verify-no-changes) - keeps the
+#      tree consistently formatted and analyzer-clean.
+#
+# Install once with:  pwsh scripts/install-hooks.ps1   (sets core.hooksPath)
+# Bypass in an emergency with:  git commit --no-verify  (use sparingly).
+
+set -u
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root" || exit 1
+
+fail=0
+
+# Resolve pwsh (PowerShell 7+) or fall back to Windows PowerShell.
+if command -v pwsh >/dev/null 2>&1; then
+  PS=pwsh
+elif command -v powershell >/dev/null 2>&1; then
+  PS=powershell
+else
+  PS=""
+fi
+
+echo "pre-commit: scanning for secrets..."
+if [ -n "$PS" ]; then
+  "$PS" -NoProfile -ExecutionPolicy Bypass -File scripts/scan-secrets.ps1
+  if [ $? -ne 0 ]; then
+    echo "pre-commit: secret scan flagged candidates. Review them, or commit with --no-verify if it is a confirmed false positive." >&2
+    fail=1
+  fi
+else
+  echo "pre-commit: PowerShell not found; skipping secret scan." >&2
+fi
+
+# Format check only when the .NET SDK is available (skip gracefully otherwise,
+# e.g. on a machine that builds via Docker only).
+if command -v dotnet >/dev/null 2>&1 && dotnet --list-sdks >/dev/null 2>&1 && [ -n "$(dotnet --list-sdks)" ]; then
+  echo "pre-commit: checking formatting (dotnet format --verify-no-changes)..."
+  dotnet format EmergencyArchive.slnx --verify-no-changes --verbosity quiet
+  if [ $? -ne 0 ]; then
+    echo "pre-commit: formatting issues found. Run 'dotnet format EmergencyArchive.slnx' and re-stage." >&2
+    fail=1
+  fi
+else
+  echo "pre-commit: no .NET SDK on PATH; skipping format check (CI still enforces it)."
+fi
+
+if [ $fail -ne 0 ]; then
+  echo "pre-commit: checks failed - commit aborted." >&2
+  exit 1
+fi
+
+echo "pre-commit: OK"
+exit 0

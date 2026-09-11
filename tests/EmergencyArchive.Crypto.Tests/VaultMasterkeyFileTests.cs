@@ -1,5 +1,5 @@
-using EmergencyArchive.Crypto.Vault;
 using System.Text.Json;
+using EmergencyArchive.Crypto.Vault;
 using Xunit;
 
 namespace EmergencyArchive.Crypto.Tests;

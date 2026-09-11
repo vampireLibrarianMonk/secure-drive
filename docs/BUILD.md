@@ -155,6 +155,39 @@ They run as part of the normal suite (`dotnet test EmergencyArchive.slnx`), in
 powershell -ExecutionPolicy Bypass -File scripts\test-ui.ps1 -SkipPull
 ```
 
+## Pre-commit hooks
+
+Install the shared git hooks once after cloning:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\install-hooks.ps1
+```
+
+This points `core.hooksPath` at the committed `scripts/hooks` directory. The
+**pre-commit** hook runs two fast checks before a commit is created:
+
+1. **Secret scan** (`scripts/scan-secrets.ps1`) — blocks committing credentials.
+2. **Format/style** (`dotnet format --verify-no-changes`) — keeps the tree
+   consistently formatted and analyzer-clean. Fix with
+   `dotnet format EmergencyArchive.slnx` and re-stage.
+
+Each check degrades gracefully if its tool is missing (e.g. no .NET SDK on a
+Docker-only machine); CI still enforces both. Bypass once with
+`git commit --no-verify` only for a confirmed false positive.
+
+## Dependency & supply-chain currency
+
+- Versions are centrally pinned in `Directory.Packages.props`; `nuget.config`
+  restricts sources to nuget.org with package-source mapping.
+- `.github/dependabot.yml` opens weekly PRs for NuGet and GitHub Actions,
+  pinning actions to commit SHAs and keeping dependencies current.
+- Audit locally:
+
+  ```powershell
+  dotnet list EmergencyArchive.slnx package --vulnerable --include-transitive
+  dotnet list EmergencyArchive.slnx package --outdated
+  ```
+
 ## Continuous integration
 
 `.github/workflows/ci.yml` runs on every push and pull request. It builds and

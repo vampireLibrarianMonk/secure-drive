@@ -1,5 +1,5 @@
-using EmergencyArchive.Search.TextExtraction;
 using System.Text;
+using EmergencyArchive.Search.TextExtraction;
 
 namespace EmergencyArchive.Search;
 
