@@ -297,13 +297,17 @@ public sealed class CredentialViewerTests : IDisposable
         window.Show();
 
         Assert.False(ScreenVisible(window, "CredentialsScreen"));
-        // The Setup cards are visible while credentials are closed.
+        // The Setup content (header + cards + activity log) shows while closed.
         Assert.True(vm.IsSetupCards);
+        Assert.True(ScreenVisible(window, "SetupContent"));
 
         vm.IsCredentialsMode = true;
         Assert.True(ScreenVisible(window, "CredentialsScreen"));
         Assert.False(vm.IsSetupCards);
-        // Still exactly the Setup screen among the four named top-level screens.
+        // The whole Setup panel (including the activity log) must hide so it
+        // cannot overlap or block the credential viewer.
+        Assert.False(ScreenVisible(window, "SetupContent"));
+        // Still the Setup screen among the four named top-level screens.
         Assert.True(ScreenVisible(window, "SetupScreen"));
     }
 

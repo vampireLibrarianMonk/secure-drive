@@ -230,8 +230,10 @@
 
       <!-- Inner DockPanel binds against the Setup view model; the OUTER
            Panel's IsVisible stays bound to the MainWindowViewModel
-           (IsSetupMode) so the whole screen shows/hides correctly. The cards
-           ScrollViewer inside hides itself when the credential viewer is open. -->
+           (IsSetupMode) so the whole screen shows/hides correctly. The whole
+           Setup panel (header + cards + activity log) hides while the credential
+           viewer is open so the log cannot overlap or block it. -->
+      <Panel x:Name="SetupContent" IsVisible="{Binding !IsCredentialsMode}">
       <DockPanel DataContext="{Binding Setup}" x:DataType="vm:SetupViewModel">
 
         <!-- Fixed header -->
@@ -287,11 +289,10 @@
             </StackPanel>
         </Border>
 
-        <!-- Scrollable task cards, in a numbered top-to-bottom flow.
-             Hidden while the credential viewer sub-screen is open. -->
+        <!-- Scrollable task cards, in a numbered top-to-bottom flow. The whole
+             SetupContent panel hides when the credential viewer is open. -->
         <ScrollViewer HorizontalScrollBarVisibility="Disabled"
                       VerticalScrollBarVisibility="Auto"
-                      IsVisible="{Binding IsSetupCards, ElementName=Root}"
                       Padding="20,14,20,20">
           <StackPanel Spacing="14" MaxWidth="980" HorizontalAlignment="Stretch">
 
@@ -515,6 +516,7 @@
           </StackPanel>
         </ScrollViewer>
       </DockPanel>
+      </Panel>
 
       <!-- Credential viewer sub-screen: native Avalonia, overlays the Setup
            cards when open. DataContext is the root VM's Credentials. -->
