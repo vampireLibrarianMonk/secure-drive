@@ -13,7 +13,7 @@
 
     <!-- Product metadata embedded in assemblies and propagated into the SBOM. -->
     <!-- Keep in sync with the VERSION file and CHANGELOG.md top entry. -->
-    <Version>0.3.0</Version>
+    <Version>0.4.0</Version>
     <Product>Emergency Archive</Product>
     <Authors>Emergency Archive Project</Authors>
     <Company>Emergency Archive Project</Company>

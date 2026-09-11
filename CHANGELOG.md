@@ -9,6 +9,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _Nothing yet._
 
+## [0.4.0] - 2026-09-11
+
+In-app password manager: a native Avalonia credential viewer with full CRUD,
+stored encrypted inside the vault. No WebView2 and no browser, so it keeps the
+"runs anywhere, nothing installed" guarantee and is fully testable headlessly.
+Secret values never touch disk in the clear. Full suite: 238 tests, 0 failures.
+
+### Added
+
+- **Credential store** (`EmergencyArchive.Sync`): a small, MIT-clean model of
+  our own (`Credential` + `CredentialDatabase` with arbitrary extra key/value
+  fields) persisted as an encrypted document inside the vault
+  (`credentials/credentials.json`) via `CredentialStore`, excluded from the
+  document browse/search list. Deliberately not the KeePass/KDBX format (KDBX
+  import/export is a separate, self-implemented step so no GPL code is linked).
+- **Password manager viewer** (native Avalonia, no WebView2): opened from a
+  **Password Manager** card in Setup. Searchable by site/username, every secret
+  value obfuscated by default with a per-value reveal toggle and copy button,
+  and an expandable list of extra fields (also obfuscated). Nothing is written
+  to disk in the clear; the viewer closes back to Setup.
+- **Credential CRUD**: add, edit, and delete credentials through an in-app
+  form (site, username, password with a show/hide toggle, and dynamic extra
+  key/value rows). Changes are written back through the vault (encrypted) and
+  reload correctly. Add/edit/delete/copy are recorded in the encrypted activity
+  log by site name only — never secret values.
+- **Credential HTML page builder** (`CredentialPageBuilder`): a pure, tested,
+  XSS-safe renderer kept for a future export/portability path.
+- **Headless UI tests** for the viewer: entries load and sort, search filters,
+  values are obfuscated by default, reveal toggles, extras round-trip through
+  the encrypted store, and the OPEN/CLOSE command bindings actually resolve
+  (guarding against silent binding regressions).
+
+### Fixed
+
+- **Password manager was unreachable**: the OPEN PASSWORD MANAGER button bound
+  its command by element name, which did not resolve from inside the Setup
+  namescope, so the button did nothing. Viewer commands now bind through the
+  visual tree (`$parent[Window]`), which is reliable inside DataContexts and
+  templates.
+- **Activity log overlapped the viewer**: the whole Setup panel now hides while
+  the credential viewer is open, so the log can no longer overlap or block it.
+- **Setup layout**: the activity log is a fixed-height, independently scrollable
+  strip docked at the bottom, and the card list scrolls far enough to bring the
+  last card (Password Manager) fully into view.
+
+### Changed
+
+- `scan-secrets`: the hardcoded-password rule ignores binding expressions
+  (e.g. a `RevealPassword` XAML binding) — a real secret is never a binding.
+
 ## [0.3.0] - 2026-09-10
 
 Security hardening release: an internal adversarial review pass (five rounds)
