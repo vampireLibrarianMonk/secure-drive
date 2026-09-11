@@ -12,9 +12,10 @@ public static class VaultPaths
     public const string ManifestPath = "manifest/archive-manifest.json";
     public const string SourcesPath = "sources/sources.json";
     public const string LogsPath = "logs/operations.log";
+    public const string CredentialsPath = "credentials/credentials.json";
 
     public static readonly IReadOnlyList<string> InfrastructurePaths =
-        [IndexPath, ManifestPath, SourcesPath, LogsPath];
+        [IndexPath, ManifestPath, SourcesPath, LogsPath, CredentialsPath];
 
     public static bool IsInfrastructurePath(string relativePath)
     {

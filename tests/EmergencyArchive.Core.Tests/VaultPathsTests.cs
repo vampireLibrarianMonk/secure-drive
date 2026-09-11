@@ -10,6 +10,7 @@ public class VaultPathsTests
     [InlineData("manifest/archive-manifest.json")]
     [InlineData("sources/sources.json")]
     [InlineData("logs/operations.log")]
+    [InlineData("credentials/credentials.json")]
     public void IsInfrastructurePath_RecognizesInfrastructureFiles(string path)
     {
         // These are the vault's own files. The document browse list and the
@@ -29,12 +30,13 @@ public class VaultPathsTests
     }
 
     [Fact]
-    public void InfrastructurePaths_ContainsAllFourKnownFiles()
+    public void InfrastructurePaths_ContainsAllKnownFiles()
     {
-        Assert.Equal(4, VaultPaths.InfrastructurePaths.Count);
+        Assert.Equal(5, VaultPaths.InfrastructurePaths.Count);
         Assert.Contains(VaultPaths.IndexPath, VaultPaths.InfrastructurePaths);
         Assert.Contains(VaultPaths.ManifestPath, VaultPaths.InfrastructurePaths);
         Assert.Contains(VaultPaths.SourcesPath, VaultPaths.InfrastructurePaths);
         Assert.Contains(VaultPaths.LogsPath, VaultPaths.InfrastructurePaths);
+        Assert.Contains(VaultPaths.CredentialsPath, VaultPaths.InfrastructurePaths);
     }
 }
