@@ -250,47 +250,10 @@
             </Grid>
         </Border>
 
-        <!-- Activity log docked at the bottom with its own scroll (never clipped) -->
-        <Border DockPanel.Dock="Bottom" Padding="20,10,20,14"
-                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
-                BorderThickness="0,1,0,0">
-            <StackPanel Spacing="8" MaxWidth="980" HorizontalAlignment="Stretch">
-                <Grid ColumnDefinitions="*,Auto">
-                    <TextBlock Text="ACTIVITY LOG" Classes="sectionHeading" VerticalAlignment="Center" />
-                    <TextBlock Grid.Column="1" Text="{Binding ActivityCountDisplay}"
-                               FontSize="11" Opacity="0.6" VerticalAlignment="Center" />
-                </Grid>
-                <TextBlock Text="Nothing recorded yet. Actions like UPDATE, VERIFY, and password changes appear here."
-                           IsVisible="{Binding !HasActivity}"
-                           TextWrapping="Wrap" FontSize="12" Opacity="0.6" />
-                <ScrollViewer IsVisible="{Binding HasActivity}"
-                              MaxHeight="150" VerticalScrollBarVisibility="Auto">
-                    <ItemsControl ItemsSource="{Binding ActivityEntries}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="core:OperationLogEntry">
-                                <Grid ColumnDefinitions="Auto,*" Margin="0,4">
-                                    <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-                                            CornerRadius="4" Padding="7,2" Height="20"
-                                            VerticalAlignment="Top" Margin="0,1,10,0">
-                                        <TextBlock Text="{Binding Category}" FontSize="10"
-                                                   FontWeight="SemiBold" Opacity="0.85"
-                                                   VerticalAlignment="Center" />
-                                    </Border>
-                                    <StackPanel Grid.Column="1" Spacing="1">
-                                        <TextBlock Text="{Binding Message}" TextWrapping="Wrap" FontSize="13" />
-                                        <TextBlock Text="{Binding TimestampUtc, StringFormat='{}{0:yyyy-MM-dd HH:mm} UTC'}"
-                                                   FontSize="11" Opacity="0.55" />
-                                    </StackPanel>
-                                </Grid>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </ScrollViewer>
-            </StackPanel>
-        </Border>
-
         <!-- Scrollable task cards, in a numbered top-to-bottom flow. The whole
-             SetupContent panel hides when the credential viewer is open. -->
+             SetupContent panel hides when the credential viewer is open. The
+             activity log now flows as the LAST card (see below) instead of being
+             pinned to the bottom, so the Password Manager card is not crowded. -->
         <ScrollViewer HorizontalScrollBarVisibility="Disabled"
                       VerticalScrollBarVisibility="Auto"
                       Padding="20,14,20,20">
@@ -511,6 +474,43 @@
                             Command="{Binding $parent[Window].DataContext.OpenCredentialsCommand}"
                             x:CompileBindings="False"
                             Classes="primary" HorizontalAlignment="Left" />
+                </StackPanel>
+            </Border>
+
+            <!-- Activity log: flows at the end of the card list (no longer
+                 pinned to the bottom, which crowded the Password Manager card).
+                 The whole page scrolls, so the log grows without its own
+                 nested scroll. -->
+            <Border Classes="card">
+                <StackPanel Spacing="8">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Text="ACTIVITY LOG" Classes="sectionHeading" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="1" Text="{Binding ActivityCountDisplay}"
+                                   FontSize="11" Opacity="0.6" VerticalAlignment="Center" />
+                    </Grid>
+                    <TextBlock Text="Nothing recorded yet. Actions like UPDATE, VERIFY, and password changes appear here."
+                               IsVisible="{Binding !HasActivity}"
+                               TextWrapping="Wrap" FontSize="12" Opacity="0.6" />
+                    <ItemsControl ItemsSource="{Binding ActivityEntries}" IsVisible="{Binding HasActivity}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="core:OperationLogEntry">
+                                <Grid ColumnDefinitions="Auto,*" Margin="0,4">
+                                    <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                                            CornerRadius="4" Padding="7,2" Height="20"
+                                            VerticalAlignment="Top" Margin="0,1,10,0">
+                                        <TextBlock Text="{Binding Category}" FontSize="10"
+                                                   FontWeight="SemiBold" Opacity="0.85"
+                                                   VerticalAlignment="Center" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Spacing="1">
+                                        <TextBlock Text="{Binding Message}" TextWrapping="Wrap" FontSize="13" />
+                                        <TextBlock Text="{Binding TimestampUtc, StringFormat='{}{0:yyyy-MM-dd HH:mm} UTC'}"
+                                                   FontSize="11" Opacity="0.55" />
+                                    </StackPanel>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                 </StackPanel>
             </Border>
 
