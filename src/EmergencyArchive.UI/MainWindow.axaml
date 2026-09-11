@@ -491,26 +491,31 @@
                     <TextBlock Text="Nothing recorded yet. Actions like UPDATE, VERIFY, and password changes appear here."
                                IsVisible="{Binding !HasActivity}"
                                TextWrapping="Wrap" FontSize="12" Opacity="0.6" />
-                    <ItemsControl ItemsSource="{Binding ActivityEntries}" IsVisible="{Binding HasActivity}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="core:OperationLogEntry">
-                                <Grid ColumnDefinitions="Auto,*" Margin="0,4">
-                                    <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-                                            CornerRadius="4" Padding="7,2" Height="20"
-                                            VerticalAlignment="Top" Margin="0,1,10,0">
-                                        <TextBlock Text="{Binding Category}" FontSize="10"
-                                                   FontWeight="SemiBold" Opacity="0.85"
-                                                   VerticalAlignment="Center" />
-                                    </Border>
-                                    <StackPanel Grid.Column="1" Spacing="1">
-                                        <TextBlock Text="{Binding Message}" TextWrapping="Wrap" FontSize="13" />
-                                        <TextBlock Text="{Binding TimestampUtc, StringFormat='{}{0:yyyy-MM-dd HH:mm} UTC'}"
-                                                   FontSize="11" Opacity="0.55" />
-                                    </StackPanel>
-                                </Grid>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                    <!-- Fixed-height, independently scrollable log so a long
+                         history stays compact and does not stretch the page. -->
+                    <ScrollViewer IsVisible="{Binding HasActivity}"
+                                  Height="180" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding ActivityEntries}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="core:OperationLogEntry">
+                                    <Grid ColumnDefinitions="Auto,*" Margin="0,4">
+                                        <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                                                CornerRadius="4" Padding="7,2" Height="20"
+                                                VerticalAlignment="Top" Margin="0,1,10,0">
+                                            <TextBlock Text="{Binding Category}" FontSize="10"
+                                                       FontWeight="SemiBold" Opacity="0.85"
+                                                       VerticalAlignment="Center" />
+                                        </Border>
+                                        <StackPanel Grid.Column="1" Spacing="1">
+                                            <TextBlock Text="{Binding Message}" TextWrapping="Wrap" FontSize="13" />
+                                            <TextBlock Text="{Binding TimestampUtc, StringFormat='{}{0:yyyy-MM-dd HH:mm} UTC'}"
+                                                       FontSize="11" Opacity="0.55" />
+                                        </StackPanel>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
                 </StackPanel>
             </Border>
 
