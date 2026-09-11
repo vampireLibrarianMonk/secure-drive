@@ -57,6 +57,7 @@ documented, independently recoverable open-source format.
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Developers | Components, data flows, key design decisions |
 | [docs/CRYPTOGRAPHY.md](docs/CRYPTOGRAPHY.md) | Developers | Vault format evaluation (Phase 0 draft) |
 | [docs/THREAT-MODEL.md](docs/THREAT-MODEL.md) | Developers | What is protected — and what is not |
+| [docs/SECURITY-REVIEW.md](docs/SECURITY-REVIEW.md) | Developers | Adversarial review findings/fixes and honest residual risk |
 | [docs/RECOVERY.md](docs/RECOVERY.md) | Developers | Independent long-term recovery requirement |
 
 ## Repository layout (spec §27)
