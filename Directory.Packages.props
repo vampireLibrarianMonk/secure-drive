@@ -10,11 +10,11 @@
 
   <ItemGroup>
     <!-- UI (Avalonia 11.x line; kept consistent with Avalonia.Diagnostics availability). -->
-    <PackageVersion Include="Avalonia" Version="11.3.21" />
-    <PackageVersion Include="Avalonia.Desktop" Version="11.3.21" />
-    <PackageVersion Include="Avalonia.Diagnostics" Version="11.3.21" />
-    <PackageVersion Include="Avalonia.Fonts.Inter" Version="11.3.21" />
-    <PackageVersion Include="Avalonia.Themes.Fluent" Version="11.3.21" />
+    <PackageVersion Include="Avalonia" Version="11.3.22" />
+    <PackageVersion Include="Avalonia.Desktop" Version="11.3.22" />
+    <PackageVersion Include="Avalonia.Diagnostics" Version="11.3.22" />
+    <PackageVersion Include="Avalonia.Fonts.Inter" Version="11.3.22" />
+    <PackageVersion Include="Avalonia.Themes.Fluent" Version="11.3.22" />
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
 
     <!-- Vault (Cryptomator format 8 primitives: scrypt, AES-KW, AES/CMAC). -->
@@ -29,7 +29,7 @@
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
     <!-- Headless UI tests (renders the real control tree + bindings in memory). -->
-    <PackageVersion Include="Avalonia.Headless.XUnit" Version="11.3.21" />
+    <PackageVersion Include="Avalonia.Headless.XUnit" Version="11.3.22" />
   </ItemGroup>
 
 </Project>
