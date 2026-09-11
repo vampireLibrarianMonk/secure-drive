@@ -311,6 +311,32 @@ public sealed class CredentialViewerTests : IDisposable
         Assert.True(ScreenVisible(window, "SetupScreen"));
     }
 
+    [AvaloniaFact]
+    public void OpenPasswordManagerButton_IsBoundToTheOpenCommand()
+    {
+        // Regression guard: the OPEN PASSWORD MANAGER button reaches the root
+        // view model's command via ElementName. A compiled ElementName binding
+        // silently fails to resolve, leaving the button with no command so
+        // clicking it does nothing — which is exactly "can't get to the
+        // password manager". Assert the binding actually resolved.
+        var vm = new MainWindowViewModel { IsFirstRun = false, IsUnlocked = true, IsSetupMode = true };
+        var window = new MainWindow { DataContext = vm };
+        window.Show();
+
+        Button open = FindButtonByContent(window, "OPEN PASSWORD MANAGER");
+        Assert.NotNull(open.Command);
+        Assert.Same(vm.OpenCredentialsCommand, open.Command);
+
+        // The CLOSE button uses the same pattern and must also resolve.
+        Button close = FindButtonByContent(window, "CLOSE");
+        Assert.Same(vm.CloseCredentialsCommand, close.Command);
+    }
+
+    private static Button FindButtonByContent(MainWindow window, string content) =>
+        window.GetLogicalDescendants()
+            .OfType<Button>()
+            .Single(b => b.Content as string == content);
+
     private static bool ScreenVisible(MainWindow window, string name)
     {
         Control control = window.GetLogicalDescendants()

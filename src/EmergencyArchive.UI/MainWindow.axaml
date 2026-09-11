@@ -508,7 +508,8 @@
                     <TextBlock TextWrapping="Wrap" Opacity="0.85" FontSize="13"
                                Text="Store and look up website logins inside the vault. Values stay hidden until you reveal them, and nothing is written to disk in the clear." />
                     <Button Content="OPEN PASSWORD MANAGER"
-                            Command="{Binding OpenCredentialsCommand, ElementName=Root}"
+                            Command="{Binding $parent[Window].DataContext.OpenCredentialsCommand}"
+                            x:CompileBindings="False"
                             Classes="primary" HorizontalAlignment="Left" />
                 </StackPanel>
             </Border>
@@ -545,7 +546,7 @@
                         Classes="primary" Padding="20,8" FontWeight="SemiBold"
                         IsVisible="{Binding !IsEditing}" />
                 <Button Content="CLOSE"
-                        Command="{Binding CloseCredentialsCommand, ElementName=Root}"
+                        Command="{Binding $parent[Window].DataContext.CloseCredentialsCommand}"
                         Padding="24,8" FontWeight="SemiBold"
                         x:CompileBindings="False" />
               </StackPanel>
@@ -577,11 +578,11 @@
                       <TextBlock Text="{Binding Site}" FontWeight="SemiBold" FontSize="15"
                                  VerticalAlignment="Center" />
                       <Button Grid.Column="1" Content="Edit" Padding="12,4"
-                              Command="{Binding #CredentialsRoot.DataContext.EditCommand}"
-                              CommandParameter="{Binding}" />
+                              Command="{Binding $parent[Window].DataContext.Credentials.EditCommand}"
+                              CommandParameter="{Binding}" x:CompileBindings="False" />
                       <Button Grid.Column="2" Content="Delete" Padding="12,4"
-                              Command="{Binding #CredentialsRoot.DataContext.DeleteCommand}"
-                              CommandParameter="{Binding}" />
+                              Command="{Binding $parent[Window].DataContext.Credentials.DeleteCommand}"
+                              CommandParameter="{Binding}" x:CompileBindings="False" />
                     </Grid>
 
                     <!-- Username -->
@@ -688,8 +689,8 @@
                           <TextBox Text="{Binding Key}" Watermark="Field name (e.g. PIN)" />
                           <TextBox Grid.Column="1" Text="{Binding Value}" Watermark="Value" />
                           <Button Grid.Column="2" Content="Remove" Padding="12,4"
-                                  Command="{Binding #CredentialsRoot.DataContext.Editor.RemoveExtraCommand}"
-                                  CommandParameter="{Binding}" />
+                                  Command="{Binding $parent[Window].DataContext.Credentials.Editor.RemoveExtraCommand}"
+                                  CommandParameter="{Binding}" x:CompileBindings="False" />
                         </Grid>
                       </DataTemplate>
                     </ItemsControl.ItemTemplate>
@@ -701,10 +702,12 @@
 
                 <StackPanel Orientation="Horizontal" Spacing="10">
                   <Button Content="SAVE"
-                          Command="{Binding #CredentialsRoot.DataContext.SaveCommand}"
+                          Command="{Binding $parent[Window].DataContext.Credentials.SaveCommand}"
+                          x:CompileBindings="False"
                           Classes="primary" Padding="24,8" FontWeight="SemiBold" />
                   <Button Content="CANCEL"
-                          Command="{Binding #CredentialsRoot.DataContext.CancelEditCommand}"
+                          Command="{Binding $parent[Window].DataContext.Credentials.CancelEditCommand}"
+                          x:CompileBindings="False"
                           Padding="24,8" />
                 </StackPanel>
               </StackPanel>
