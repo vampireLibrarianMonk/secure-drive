@@ -102,6 +102,7 @@ public sealed partial class SetupViewModel
         }
         catch (Exception e) when (e is System.IO.IOException or UnauthorizedAccessException or VaultException)
         {
+            AppLog.Handled("DeleteDocument", e);
             SetupStatus = $"Could not delete the document: {e.Message}";
             RecordActivity("Documents", $"Delete failed for {path}: {e.Message}");
         }

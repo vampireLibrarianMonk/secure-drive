@@ -126,6 +126,7 @@ public sealed partial class SetupViewModel
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or VaultException)
         {
+            AppLog.Handled("ReplaceDocument", e);
             SetupStatus = $"Could not replace the document: {e.Message}";
             RecordActivity("Documents", $"Replace failed for {target}: {e.Message}");
         }
@@ -162,6 +163,7 @@ public sealed partial class SetupViewModel
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or VaultException)
         {
+            AppLog.Handled($"RelocateDocument ({verb})", e);
             SetupStatus = $"Could not {verb.TrimEnd('d')} the document: {e.Message}";
             RecordActivity("Documents", $"{verb} failed for {source}: {e.Message}");
         }
@@ -224,6 +226,7 @@ public sealed partial class SetupViewModel
         }
         catch (Exception e) when (e is IOException or VaultException)
         {
+            AppLog.Handled("SafeLastWrite (falling back to current time)", e);
             return DateTimeOffset.UtcNow;
         }
     }

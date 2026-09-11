@@ -111,6 +111,7 @@ public partial class MainWindowViewModel
         }
         catch (Exception e) when (e is VaultException or IOException or UnauthorizedAccessException)
         {
+            AppLog.Handled("CreateArchive", e);
             IsFirstRun = true;
             OnPropertyChanged(nameof(IsCreating));
             OnPropertyChanged(nameof(IsUnlockable));

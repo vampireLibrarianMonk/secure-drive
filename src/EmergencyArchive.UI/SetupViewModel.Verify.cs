@@ -39,6 +39,7 @@ public sealed partial class SetupViewModel
         }
         catch (Exception e) when (e is VaultException or IOException)
         {
+            AppLog.Handled("VerifyArchive", e);
             IntegrityStatus = $"Verification failed: {e.Message}";
         }
         finally
@@ -64,6 +65,7 @@ public sealed partial class SetupViewModel
         }
         catch (VaultException e)
         {
+            AppLog.Handled("RebuildIndex", e);
             SetupStatus = $"Index rebuild failed: {e.Message}";
         }
         finally

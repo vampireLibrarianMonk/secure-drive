@@ -80,7 +80,8 @@ public sealed partial class SetupViewModel
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or VaultException)
         {
-            // Non-fatal: cleanup is best-effort.
+            // Non-fatal: placeholder cleanup is best-effort, but record it.
+            AppLog.Handled("LoadEstateState.RemoveStalePlaceholders", e);
         }
 
         if (session.FileExists(EstateLetterPath))
@@ -91,9 +92,11 @@ public sealed partial class SetupViewModel
                 EstateStatusChip = "saved — edit and save again to update";
                 return;
             }
-            catch (VaultException)
+            catch (VaultException e)
             {
-                // Fall through to a fresh template if the stored letter is unreadable.
+                // The stored letter is unreadable (corrupt/tampered): fall through
+                // to a fresh template, but do not lose that this happened.
+                AppLog.Handled("LoadEstateState.ReadEstateLetter (unreadable, using fresh template)", e);
             }
         }
 
@@ -161,6 +164,7 @@ public sealed partial class SetupViewModel
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidOperationException or VaultException)
         {
+            AppLog.Handled("SaveEstateLetter", e);
             EstateStatus = $"Could not save the letter: {e.Message}";
             RecordActivity("Estate", $"Estate-planning save failed: {e.Message}");
         }

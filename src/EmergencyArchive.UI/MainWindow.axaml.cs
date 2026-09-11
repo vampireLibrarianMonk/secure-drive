@@ -64,6 +64,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
+            AppLog.Handled("OpenSelectedDocument", ex);
             ViewModel.StatusMessage = $"Could not open '{document.Name}': {ex.Message}";
         }
     }
@@ -102,6 +103,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
+            AppLog.Handled("ExportDocument", ex);
             ViewModel.StatusMessage = $"Could not export '{document.Name}': {ex.Message}";
         }
     }

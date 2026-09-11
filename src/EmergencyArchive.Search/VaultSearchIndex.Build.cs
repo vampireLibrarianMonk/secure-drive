@@ -33,9 +33,14 @@ public sealed partial class VaultSearchIndex
             {
                 content = session.ReadFile(file);
             }
-            catch (VaultIntegrityException)
+            catch (VaultIntegrityException e)
             {
-                continue; // a corrupt document is Verify's business (Phase 3), not the index's
+                // A corrupt document is Verify's business, not the index's — but
+                // record that it was skipped so a silently missing search result
+                // is diagnosable (path only; no secrets).
+                System.Diagnostics.Trace.TraceWarning(
+                    $"[EmergencyArchive.Search] Skipped unreadable document while indexing '{file}': {e.Message}");
+                continue;
             }
 
             string? text = DocumentTextExtractor.Extract(file, new MemoryStream(content));

@@ -160,9 +160,11 @@ public partial class MainWindowViewModel : ObservableObject
             StatusMessage = WrongPasswordMessage;
             await RunCooldownAsync(rateLimiter.RemainingDelay(DateTimeOffset.UtcNow));
         }
-        catch (VaultException)
+        catch (VaultException e)
         {
-            // Corrupt, tampered, or unsupported vault: never reveal details.
+            // Corrupt, tampered, or unsupported vault: never reveal details to
+            // the UI, but log for diagnostics (goes to trace, not the vault).
+            AppLog.Handled("UnlockAsync (vault integrity/format)", e);
             StatusMessage = IntegrityMessage;
         }
         finally
@@ -256,6 +258,9 @@ public partial class MainWindowViewModel : ObservableObject
         }
         catch (Exception e) when (e is VaultException or ObjectDisposedException)
         {
+            // ObjectDisposedException is expected if the vault was locked mid-index;
+            // a VaultException means the index could not be built — record it.
+            AppLog.Handled("IndexInBackground", e);
             searchIndex = null;
             if (IsUnlocked)
             {
@@ -557,12 +562,12 @@ public partial class MainWindowViewModel : ObservableObject
         {
             Directory.Delete(openTempDirectory, recursive: true);
         }
-        catch (IOException)
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
-            // The file may still be open in an external application; leave it.
-        }
-        catch (UnauthorizedAccessException)
-        {
+            // The file may still be open in an external application; we cannot
+            // force-delete it. This is security-relevant (plaintext may remain
+            // on the host), so record it for diagnostics rather than swallowing.
+            AppLog.Handled("CleanupTempExports (temp plaintext may remain on host)", e);
         }
 
         openTempDirectory = null;

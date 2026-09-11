@@ -36,11 +36,15 @@ public static class DocumentTextExtractor
                 _ => null,
             };
         }
-        catch (Exception)
+        catch (Exception e)
         {
             // Extraction must never break indexing (spec section 24): an
-            // unreadable, corrupt, or mislabeled document is indexed by name
-            // only and reported by archive verification (Phase 3).
+            // unreadable, corrupt, mislabeled, or oversized (decompression-cap)
+            // document is indexed by name only and reported by archive
+            // verification. Record why extraction was skipped (no secrets: the
+            // file name is already the document's own name).
+            System.Diagnostics.Trace.TraceWarning(
+                $"[EmergencyArchive.Search] Text extraction failed for '{fileName}', indexing by name only: {e.GetType().Name}: {e.Message}");
             return null;
         }
     }

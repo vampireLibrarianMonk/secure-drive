@@ -62,6 +62,7 @@ public sealed partial class SetupViewModel
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or VaultException)
         {
+            AppLog.Handled("AddFiles", e);
             SetupStatus = $"Could not add the document(s): {e.Message}";
             RecordActivity("Documents", $"Add document failed: {e.Message}");
         }
@@ -96,6 +97,7 @@ public sealed partial class SetupViewModel
             }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException)
             {
+                AppLog.Handled($"AddFiles: skipped unreadable source file", e);
                 skipped++;
                 continue;
             }

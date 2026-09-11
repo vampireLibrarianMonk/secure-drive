@@ -73,6 +73,7 @@ public sealed partial class SetupViewModel
         }
         catch (Exception e) when (e is VaultException or DirectoryNotFoundException or InvalidOperationException)
         {
+            AppLog.Handled("UpdateArchive", e);
             SetupStatus = $"Update failed: {e.Message}";
             RecordActivity("Update", $"Update failed: {e.Message}");
         }
