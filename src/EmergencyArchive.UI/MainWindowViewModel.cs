@@ -28,8 +28,29 @@ public partial class MainWindowViewModel : ObservableObject
 
     public MainWindowViewModel()
     {
+        // Route sanitized diagnostics into the encrypted activity log while a
+        // vault is unlocked (full detail still goes to trace via AppLog).
+        AppLog.ActivitySink = RecordDiagnostic;
+
         // Decide the first screen: create-archive (no vault yet) or unlock.
         DetectVault();
+    }
+
+    /// <summary>
+    /// Appends a sanitized diagnostic entry to the encrypted activity log, when
+    /// a vault is unlocked. The caller (AppLog) has already stripped the entry
+    /// to a category + exception type, so nothing sensitive is persisted
+    /// (spec section 20). No-ops when locked (no log to write to).
+    /// </summary>
+    private void RecordDiagnostic(string category, string message)
+    {
+        if (session is null || operationLog is null)
+        {
+            return;
+        }
+
+        operationLog.Append(category, message);
+        OperationLogStore.Save(session, operationLog);
     }
 
     public const string ReadyMessage = "Enter the archive password to continue.";
