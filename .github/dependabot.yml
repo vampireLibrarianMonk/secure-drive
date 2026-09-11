@@ -21,6 +21,14 @@ updates:
         patterns:
           - "xunit*"
           - "Microsoft.NET.Test.Sdk"
+    ignore:
+      # Hold the Avalonia 11 -> 12 major upgrade: it is a breaking change
+      # (e.g. the Avalonia.Diagnostics package is removed in 12) and needs a
+      # deliberate, separately-tested migration, not an automated PR. We stay on
+      # the stable 11.x line (zero known vulnerabilities) and still take 11.x
+      # patch/minor updates. Revisit when planning the v12 migration.
+      - dependency-name: "Avalonia*"
+        update-types: ["version-update:semver-major"]
 
   # GitHub Actions used by CI and the release workflow. Dependabot pins actions
   # to commit SHAs and keeps them updated (addresses mutable-tag supply-chain
