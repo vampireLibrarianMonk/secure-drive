@@ -9,6 +9,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _Nothing yet._
 
+## [0.3.0] - 2026-09-10
+
+Security hardening release: an internal adversarial review pass (five rounds)
+plus a due-diligence sweep. See [docs/SECURITY-REVIEW.md](docs/SECURITY-REVIEW.md)
+for findings, fixes, and an honest residual-risk statement. Full suite: 215
+tests, 0 failures.
+
+### Added
+
+- **Security review summary** (`docs/SECURITY-REVIEW.md`): what was verified
+  sound, the findings fixed, and explicit residual risk.
+- **Pre-commit hooks** (`scripts/hooks/pre-commit`, `scripts/install-hooks.ps1`):
+  secret scan + `dotnet format --verify-no-changes` before each commit.
+- **Dependabot** (`.github/dependabot.yml`): weekly NuGet + GitHub Actions
+  updates; pins actions to commit SHAs.
+- **Diagnostic logging** (`AppLog`): handled exceptions are logged (full detail
+  to trace; a sanitized event to the encrypted activity log) instead of being
+  silently swallowed.
+
+### Fixed (security)
+
+- **Path traversal on OPEN**: the temporary file written when opening a document
+  is now confined to a sanitized leaf name inside the working directory
+  (blocks traversal, absolute paths, and reserved device names).
+- **Decompression bomb**: OOXML text extraction is bounded (per-entry and total
+  decompressed bytes); PDF page count is capped.
+- **Verify robustness**: a corrupt/unreadable document is reported as corrupt
+  and the scan continues, instead of aborting the whole verification.
+- **Vault config JWT**: verification selects the HMAC named by the `alg` header
+  (HS256/384/512) and still rejects any other; the raw masterkey copy is
+  zeroized after use.
+
+### Changed
+
+- Safe in-minor dependency bumps: Avalonia 11.3.20 → 11.3.21,
+  Microsoft.Data.Sqlite 10.0.11 → 10.0.12, Microsoft.NET.Test.Sdk 18.9.0 →
+  18.10.0. (Zero vulnerable packages, including transitive.)
+- Solution formatted to a consistent style (`dotnet format`).
+
 ## [0.2.0] - 2026-09-10
 
 ### Added
