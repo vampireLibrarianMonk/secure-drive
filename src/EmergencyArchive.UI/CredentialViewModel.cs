@@ -61,7 +61,36 @@ public sealed partial class CredentialViewModel : ObservableObject
 
     public bool IsEditing => Editor is not null;
 
+    /// <summary>True while the "clear all credentials" confirmation is showing.</summary>
+    [ObservableProperty]
+    private bool isConfirmingClearAll;
+
     partial void OnSearchTextChanged(string? value) => ApplyFilter();
+
+    // --- Clear all (purge the password store, leaves documents untouched) ----
+
+    /// <summary>Asks for confirmation before wiping every stored credential.</summary>
+    [RelayCommand]
+    private void ClearAll() => IsConfirmingClearAll = true;
+
+    /// <summary>Dismisses the clear-all confirmation without deleting anything.</summary>
+    [RelayCommand]
+    private void CancelClearAll() => IsConfirmingClearAll = false;
+
+    /// <summary>
+    /// Permanently removes every stored credential (saves an empty database).
+    /// Only the credentials are affected; archived documents are untouched.
+    /// </summary>
+    [RelayCommand]
+    private void ConfirmClearAll()
+    {
+        int removed = database.Count;
+        database = CredentialDatabase.Empty;
+        Persist();
+        IsConfirmingClearAll = false;
+        Rebuild();
+        log?.Invoke($"Cleared all {removed} stored credential(s).");
+    }
 
     // --- KeePass (KDBX) import / export -------------------------------------
 

@@ -559,6 +559,9 @@
                 <Button Content="EXPORT" Click="OnExportKdbxClicked"
                         Padding="16,8" FontWeight="SemiBold"
                         IsVisible="{Binding !IsEditing}" />
+                <Button Content="CLEAR ALL" Command="{Binding ClearAllCommand}"
+                        Padding="16,8" FontWeight="SemiBold"
+                        IsVisible="{Binding !IsEditing}" />
                 <Button Content="CLOSE"
                         Command="{Binding $parent[Window].DataContext.CloseCredentialsCommand}"
                         Padding="24,8" FontWeight="SemiBold"
@@ -587,6 +590,23 @@
                   <Button Content="CONTINUE" Command="{Binding ConfirmKdbxCommand}"
                           Classes="primary" Padding="20,6" FontWeight="SemiBold" />
                   <Button Content="CANCEL" Command="{Binding CancelKdbxCommand}" Padding="20,6" />
+                </StackPanel>
+              </StackPanel>
+            </Border>
+
+            <!-- Clear-all confirmation: purges every stored credential. Only the
+                 password store is affected; archived documents are untouched. -->
+            <Border IsVisible="{Binding IsConfirmingClearAll}"
+                    BorderBrush="#D9534F" BorderThickness="1" CornerRadius="6" Padding="12">
+              <StackPanel Spacing="8">
+                <TextBlock Text="Clear all stored credentials?" FontWeight="SemiBold" />
+                <TextBlock TextWrapping="Wrap" FontSize="12" Opacity="0.85"
+                           Text="This permanently removes every credential from the password manager. Your archived documents are not affected. There is no undo." />
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                  <Button Content="YES, CLEAR ALL" Command="{Binding ConfirmClearAllCommand}"
+                          Padding="20,6" FontWeight="SemiBold" />
+                  <Button Content="CANCEL" Command="{Binding CancelClearAllCommand}"
+                          Classes="primary" Padding="20,6" />
                 </StackPanel>
               </StackPanel>
             </Border>

@@ -365,6 +365,50 @@ public sealed class CredentialViewerTests : IDisposable
     }
 
     [Fact]
+    public void ClearAll_Confirmed_RemovesEverything_AndPersists()
+    {
+        var db = CredentialDatabase.Empty
+            .With(Credential.Create("a.example", "u1", "p1"))
+            .With(Credential.Create("b.example", "u2", "p2"));
+
+        using (VaultSession session = VaultStore.Unlock(vaultDir, Password))
+        {
+            CredentialStore.Save(session, db);
+            var viewer = new CredentialViewModel(session);
+            Assert.Equal(2, viewer.Items.Count);
+
+            viewer.ClearAllCommand.Execute(null);
+            Assert.True(viewer.IsConfirmingClearAll);   // asks first
+
+            viewer.ConfirmClearAllCommand.Execute(null);
+            Assert.False(viewer.IsConfirmingClearAll);
+            Assert.Empty(viewer.Items);
+        }
+
+        // The purge persisted: a fresh load is empty.
+        using (VaultSession reload = VaultStore.Unlock(vaultDir, Password))
+        {
+            var reloaded = new CredentialViewModel(reload);
+            Assert.Empty(reloaded.Items);
+        }
+    }
+
+    [Fact]
+    public void ClearAll_Cancelled_KeepsCredentials()
+    {
+        var db = CredentialDatabase.Empty.With(Credential.Create("a.example", "u", "p"));
+        using VaultSession session = VaultStore.Unlock(vaultDir, Password);
+        CredentialStore.Save(session, db);
+        var viewer = new CredentialViewModel(session);
+
+        viewer.ClearAllCommand.Execute(null);
+        viewer.CancelClearAllCommand.Execute(null);
+
+        Assert.False(viewer.IsConfirmingClearAll);
+        Assert.Single(viewer.Items);
+    }
+
+    [Fact]
     public void CancelKdbx_ClosesThePrompt()
     {
         using VaultSession session = VaultStore.Unlock(vaultDir, Password);
