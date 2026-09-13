@@ -639,7 +639,11 @@
              constrained to the viewport; the ItemsControl and each card stretch
              to fill that width so the Edit/Delete/Copy/Reveal buttons stay on
              screen (left-aligned MaxWidth keeps a readable line length on very
-             wide monitors). -->
+             wide monitors). This Grid is the DockPanel's fill child (only the
+             last DockPanel child fills the remaining space); the list and the
+             editor share this single cell and are toggled by IsVisible, so each
+             gets the full remaining width instead of collapsing to content. -->
+        <Grid>
         <ScrollViewer x:Name="CredentialsList"
                       HorizontalScrollBarVisibility="Disabled"
                       VerticalScrollBarVisibility="Auto"
@@ -791,6 +795,7 @@
             </Border>
           </StackPanel>
         </ScrollViewer>
+        </Grid>
         </DockPanel>
       </DockPanel>
     </Panel>
