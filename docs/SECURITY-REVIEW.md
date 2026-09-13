@@ -4,8 +4,10 @@ This records an internal adversarial review pass (five focused rounds plus a
 due-diligence sweep) and, importantly, an **honest statement of residual risk**.
 It is not a substitute for an independent third-party audit.
 
-Scope reviewed at commit-level with tests added for each fix. Full suite: **215
-tests, 0 failures** across crypto, integrity, sync, search, and headless UI.
+Scope reviewed at commit-level with tests added for each fix. At the time of
+this review the full suite was **215 tests, 0 failures** across crypto,
+integrity, sync, search, and headless UI; it has since grown to **264 tests, 0
+failures** as the password manager and KeePass (KDBX) import/export were added.
 
 ---
 
