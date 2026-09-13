@@ -604,7 +604,12 @@
                       VerticalScrollBarVisibility="Auto"
                       IsVisible="{Binding !IsEditing}"
                       Padding="20,14,20,20">
-          <ItemsControl ItemsSource="{Binding Items}" MaxWidth="980" HorizontalAlignment="Stretch">
+          <!-- Constrain the list to the scroll viewport width so the card rows
+               shrink to fit instead of laying out at their natural width and
+               being clipped (a disabled horizontal scrollbar clips, not wraps). -->
+          <ItemsControl ItemsSource="{Binding Items}"
+                        HorizontalAlignment="Stretch"
+                        MaxWidth="{Binding #CredentialsList.Bounds.Width}">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:CredentialItemViewModel">
                 <Border Classes="card" Margin="0,0,0,14">
