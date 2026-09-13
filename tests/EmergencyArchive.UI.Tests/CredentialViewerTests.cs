@@ -289,6 +289,93 @@ public sealed class CredentialViewerTests : IDisposable
         }
     }
 
+    // --- KeePass (KDBX) import / export -------------------------------------
+
+    [Fact]
+    public void BeginImport_ThenConfirm_MergesAndPersists()
+    {
+        // Produce a real .kdbx from two credentials.
+        var source = CredentialDatabase.Empty
+            .With(Credential.Create("bank.example", "alice", "pw1"))
+            .With(Credential.Create("mail.example", "bob", "pw2"));
+        byte[] kdbx = KdbxCredentialMapper.Export(source, "kdbx-pass");
+
+        using (VaultSession session = VaultStore.Unlock(vaultDir, Password))
+        {
+            var viewer = new CredentialViewModel(session);
+            viewer.BeginImport(kdbx);
+            Assert.True(viewer.IsKdbxPrompt);
+
+            viewer.KdbxPassword = "kdbx-pass";
+            viewer.ConfirmKdbxCommand.Execute(null);
+
+            Assert.False(viewer.IsKdbxPrompt);          // prompt closed on success
+            Assert.Equal(2, viewer.Items.Count);
+        }
+
+        // Persisted through the vault.
+        using (VaultSession reload = VaultStore.Unlock(vaultDir, Password))
+        {
+            var reloaded = new CredentialViewModel(reload);
+            Assert.Equal(2, reloaded.Items.Count);
+            Assert.Contains(reloaded.Items, i => i.Site == "bank.example");
+        }
+    }
+
+    [Fact]
+    public void Import_WrongKdbxPassword_ShowsError_AndDoesNotImport()
+    {
+        byte[] kdbx = KdbxCredentialMapper.Export(
+            CredentialDatabase.Empty.With(Credential.Create("s", "u", "p")), "right-pass");
+
+        using VaultSession session = VaultStore.Unlock(vaultDir, Password);
+        var viewer = new CredentialViewModel(session);
+        viewer.BeginImport(kdbx);
+        viewer.KdbxPassword = "wrong-pass";
+        viewer.ConfirmKdbxCommand.Execute(null);
+
+        Assert.True(viewer.IsKdbxPrompt);   // stays open on error
+        Assert.True(viewer.HasKdbxError);
+        Assert.Empty(viewer.Items);
+    }
+
+    [Fact]
+    public void BeginExport_ThenConfirm_WritesBytesThroughTheView()
+    {
+        var db = CredentialDatabase.Empty.With(Credential.Create("bank.example", "alice", "pw1"));
+
+        using VaultSession session = VaultStore.Unlock(vaultDir, Password);
+        var viewer = new CredentialViewModel(session);
+        // seed the store so export has content
+        CredentialStore.Save(session, db);
+        var seeded = new CredentialViewModel(session);
+
+        byte[]? written = null;
+        seeded.BeginExport(bytes => { written = bytes; return Task.CompletedTask; });
+        Assert.True(seeded.IsKdbxPrompt);
+
+        seeded.KdbxPassword = "export-pass";
+        seeded.ConfirmKdbxCommand.Execute(null);
+
+        Assert.False(seeded.IsKdbxPrompt);
+        Assert.NotNull(written);
+        // The written bytes are a valid KDBX openable with the same password.
+        IReadOnlyList<Credential> back = KdbxCredentialMapper.Import(written!, "export-pass");
+        Assert.Contains(back, c => c.Site == "bank.example");
+    }
+
+    [Fact]
+    public void CancelKdbx_ClosesThePrompt()
+    {
+        using VaultSession session = VaultStore.Unlock(vaultDir, Password);
+        var viewer = new CredentialViewModel(session);
+        viewer.BeginImport([1, 2, 3]);
+        Assert.True(viewer.IsKdbxPrompt);
+
+        viewer.CancelKdbxCommand.Execute(null);
+        Assert.False(viewer.IsKdbxPrompt);
+    }
+
     [AvaloniaFact]
     public void CredentialsScreen_IsHiddenByDefault_AndVisibleWhenOpened()
     {

@@ -553,6 +553,12 @@
                 <Button Content="ADD" Command="{Binding AddCommand}"
                         Classes="primary" Padding="20,8" FontWeight="SemiBold"
                         IsVisible="{Binding !IsEditing}" />
+                <Button Content="IMPORT" Click="OnImportKdbxClicked"
+                        Padding="16,8" FontWeight="SemiBold"
+                        IsVisible="{Binding !IsEditing}" />
+                <Button Content="EXPORT" Click="OnExportKdbxClicked"
+                        Padding="16,8" FontWeight="SemiBold"
+                        IsVisible="{Binding !IsEditing}" />
                 <Button Content="CLOSE"
                         Command="{Binding $parent[Window].DataContext.CloseCredentialsCommand}"
                         Padding="24,8" FontWeight="SemiBold"
@@ -563,6 +569,27 @@
                      Watermark="Search by website or username…" />
             <TextBlock Text="{Binding Summary}" FontSize="12" Opacity="0.7"
                        IsVisible="{Binding !IsEditing}" />
+
+            <!-- KeePass (.kdbx) password prompt for import/export. The file is
+                 chosen first (code-behind), then this asks for its password. -->
+            <Border IsVisible="{Binding IsKdbxPrompt}"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="1" CornerRadius="6" Padding="12">
+              <StackPanel Spacing="8">
+                <TextBlock Text="{Binding KdbxPromptTitle}" FontWeight="SemiBold" />
+                <TextBlock TextWrapping="Wrap" FontSize="12" Opacity="0.8"
+                           Text="Enter the password for the KeePass file (this is separate from your archive password)." />
+                <TextBox Text="{Binding KdbxPassword}" PasswordChar="&#x25CF;"
+                         Watermark="KeePass file password" />
+                <TextBlock Text="{Binding KdbxError}" Foreground="#D9534F"
+                           TextWrapping="Wrap" IsVisible="{Binding HasKdbxError}" />
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                  <Button Content="CONTINUE" Command="{Binding ConfirmKdbxCommand}"
+                          Classes="primary" Padding="20,6" FontWeight="SemiBold" />
+                  <Button Content="CANCEL" Command="{Binding CancelKdbxCommand}" Padding="20,6" />
+                </StackPanel>
+              </StackPanel>
+            </Border>
           </StackPanel>
         </Border>
 

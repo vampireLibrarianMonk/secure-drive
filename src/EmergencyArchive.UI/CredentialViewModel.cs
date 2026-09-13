@@ -1,6 +1,9 @@
 using System.Collections.ObjectModel;
+using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using EmergencyArchive.Core;
+using EmergencyArchive.Crypto.Kdbx;
 using EmergencyArchive.Crypto.Vault;
 using EmergencyArchive.Sync;
 
@@ -59,6 +62,136 @@ public sealed partial class CredentialViewModel : ObservableObject
     public bool IsEditing => Editor is not null;
 
     partial void OnSearchTextChanged(string? value) => ApplyFilter();
+
+    // --- KeePass (KDBX) import / export -------------------------------------
+
+    /// <summary>Which KeePass password prompt (if any) is currently showing.</summary>
+    public enum KdbxMode
+    {
+        None,
+        Import,
+        Export,
+    }
+
+    /// <summary>The bytes of a chosen .kdbx file, awaiting the password (import).</summary>
+    private byte[]? pendingImportBytes;
+
+    /// <summary>
+    /// Callback the view sets for export: given the produced .kdbx bytes, the
+    /// view writes them to the file the user chose. Keeps file I/O in the view.
+    /// </summary>
+    private Func<byte[], Task>? exportWriter;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsKdbxPrompt))]
+    [NotifyPropertyChangedFor(nameof(KdbxPromptTitle))]
+    private KdbxMode kdbxPromptMode;
+
+    [ObservableProperty]
+    private string kdbxPassword = string.Empty;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasKdbxError))]
+    private string? kdbxError;
+
+    public bool IsKdbxPrompt => KdbxPromptMode != KdbxMode.None;
+
+    public bool HasKdbxError => !string.IsNullOrEmpty(KdbxError);
+
+    public string KdbxPromptTitle => KdbxPromptMode switch
+    {
+        KdbxMode.Import => "Import from KeePass (.kdbx)",
+        KdbxMode.Export => "Export to KeePass (.kdbx)",
+        _ => string.Empty,
+    };
+
+    /// <summary>The view calls this after the user picks a .kdbx file to import.</summary>
+    public void BeginImport(byte[] fileBytes)
+    {
+        pendingImportBytes = fileBytes;
+        exportWriter = null;
+        KdbxPassword = string.Empty;
+        KdbxError = null;
+        KdbxPromptMode = KdbxMode.Import;
+    }
+
+    /// <summary>The view calls this after the user picks a save location to export to.</summary>
+    public void BeginExport(Func<byte[], Task> writer)
+    {
+        exportWriter = writer;
+        pendingImportBytes = null;
+        KdbxPassword = string.Empty;
+        KdbxError = null;
+        KdbxPromptMode = KdbxMode.Export;
+    }
+
+    [RelayCommand]
+    private void CancelKdbx()
+    {
+        KdbxPromptMode = KdbxMode.None;
+        KdbxPassword = string.Empty;
+        KdbxError = null;
+        pendingImportBytes = null;
+        exportWriter = null;
+    }
+
+    /// <summary>Confirms the KDBX prompt: runs the import or export with the entered password.</summary>
+    [RelayCommand]
+    private async Task ConfirmKdbxAsync()
+    {
+        if (string.IsNullOrEmpty(KdbxPassword))
+        {
+            KdbxError = "Enter the KeePass file's password.";
+            return;
+        }
+
+        try
+        {
+            if (KdbxPromptMode == KdbxMode.Import)
+            {
+                ImportFromKdbx(pendingImportBytes ?? [], KdbxPassword);
+            }
+            else if (KdbxPromptMode == KdbxMode.Export && exportWriter is not null)
+            {
+                byte[] bytes = KdbxCredentialMapper.Export(database, KdbxPassword);
+                await exportWriter(bytes);
+                log?.Invoke($"Exported {database.Count} credential(s) to a KeePass file.");
+            }
+
+            CancelKdbx();
+        }
+        catch (KdbxAuthenticationException)
+        {
+            KdbxError = "Wrong password for the KeePass file.";
+        }
+        catch (KdbxException e)
+        {
+            AppLog.Handled("ConfirmKdbx", e);
+            KdbxError = "That file is not a supported KeePass database.";
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            AppLog.Handled("ConfirmKdbx (file io)", e);
+            KdbxError = $"Could not complete: {e.Message}";
+        }
+    }
+
+    /// <summary>
+    /// Merges the entries from a KeePass file into the store (each gets a fresh
+    /// id) and persists. Only counts are logged — never secret values.
+    /// </summary>
+    private void ImportFromKdbx(byte[] fileBytes, string kdbxPassword)
+    {
+        IReadOnlyList<Credential> imported = KdbxCredentialMapper.Import(fileBytes, kdbxPassword);
+        foreach (Credential credential in imported)
+        {
+            database = database.With(credential);
+        }
+
+        Persist();
+        Rebuild();
+        log?.Invoke($"Imported {imported.Count} credential(s) from a KeePass file.");
+    }
 
     // --- Commands -----------------------------------------------------------
 
@@ -172,7 +305,7 @@ public sealed partial class CredentialViewModel : ObservableObject
         }
 
         Summary = all.Count == 0
-            ? "No credentials yet. Add one, or import a KeePass file (coming soon)."
+            ? "No credentials yet. Add one, or import a KeePass (.kdbx) file."
             : string.IsNullOrWhiteSpace(term)
                 ? $"{all.Count} credential(s)"
                 : $"Showing {shown} of {all.Count} credential(s)";

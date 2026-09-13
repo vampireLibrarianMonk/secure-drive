@@ -7,7 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_Nothing yet._
+### Added
+
+- **KeePass (KDBX) import and export** for the password manager, self-implemented
+  and MIT-clean on the existing BouncyCastle dependency (no GPL code). Reads
+  KDBX 3.1 and 4.x and writes KDBX 4 (Argon2id KDF, AES-256-CBC, GZip, ChaCha20
+  inner protected-value stream), so credentials are portable to and from
+  KeePass, KeePassXC, and other KeePass-compatible tools. Import merges entries
+  into the vault (each gets a fresh id); export writes an encrypted `.kdbx`.
+  IMPORT / EXPORT buttons in the viewer prompt for the KeePass file's password
+  (separate from the archive password); only entry counts are written to the
+  activity log, never secret values. Password-only for now (key files are a
+  future step).
+- Crypto primitives wrappers (`KdbxCrypto`) for Argon2d/Argon2id, ChaCha20,
+  Salsa20, AES-KDF, and AES-256-CBC, pinned by known-answer vectors (RFC 9106
+  Argon2 conformance values, an independent RFC 7539 ChaCha20 cross-check).
+- KDBX codec (`KdbxCodec`) and credential mapper (`KdbxCredentialMapper`) with
+  round-trip, unicode/emoji, wrong-password, tamper, and corrupt-file tests.
 
 ## [0.4.0] - 2026-09-11
 

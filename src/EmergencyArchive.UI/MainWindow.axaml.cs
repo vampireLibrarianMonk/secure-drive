@@ -77,6 +77,89 @@ public partial class MainWindow : Window
         }
     }
 
+    private static readonly FilePickerFileType KdbxFileType = new("KeePass database")
+    {
+        Patterns = ["*.kdbx"],
+    };
+
+    /// <summary>Picks a .kdbx file, reads its bytes, then asks the viewer for the file password.</summary>
+    private async void OnImportKdbxClicked(object? sender, RoutedEventArgs e)
+    {
+        CredentialViewModel? credentials = ViewModel.Credentials;
+        if (credentials is null)
+        {
+            return;
+        }
+
+        IStorageProvider? storage = TopLevel.GetTopLevel(this)?.StorageProvider;
+        if (storage is null)
+        {
+            return;
+        }
+
+        try
+        {
+            IReadOnlyList<IStorageFile> files = await storage.OpenFilePickerAsync(new FilePickerOpenOptions
+            {
+                Title = "Choose a KeePass (.kdbx) file to import",
+                AllowMultiple = false,
+                FileTypeFilter = [KdbxFileType],
+            });
+
+            if (files.Count == 0)
+            {
+                return;
+            }
+
+            await using Stream input = await files[0].OpenReadAsync();
+            using var buffer = new MemoryStream();
+            await input.CopyToAsync(buffer);
+            credentials.BeginImport(buffer.ToArray());
+        }
+        catch (Exception ex)
+        {
+            AppLog.Handled("OnImportKdbxClicked", ex);
+            ViewModel.StatusMessage = $"Could not read the KeePass file: {ex.Message}";
+        }
+    }
+
+    /// <summary>Picks a save location, then asks the viewer for the export password and writes the bytes.</summary>
+    private async void OnExportKdbxClicked(object? sender, RoutedEventArgs e)
+    {
+        CredentialViewModel? credentials = ViewModel.Credentials;
+        if (credentials is null)
+        {
+            return;
+        }
+
+        IStorageProvider? storage = TopLevel.GetTopLevel(this)?.StorageProvider;
+        if (storage is null)
+        {
+            return;
+        }
+
+        IStorageFile? file = await storage.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Export credentials to a KeePass (.kdbx) file",
+            SuggestedFileName = "credentials.kdbx",
+            FileTypeChoices = [KdbxFileType],
+            DefaultExtension = "kdbx",
+        });
+
+        if (file is null)
+        {
+            return;
+        }
+
+        // The viewer produces the encrypted bytes (after prompting for the
+        // export password); this closure writes them to the chosen file.
+        credentials.BeginExport(async bytes =>
+        {
+            await using Stream target = await file.OpenWriteAsync();
+            await target.WriteAsync(bytes);
+        });
+    }
+
     private void OnOpenClicked(object? sender, RoutedEventArgs e) => OpenSelectedDocument();
 
     private void OnDocumentDoubleTapped(object? sender, Avalonia.Input.TappedEventArgs e)
