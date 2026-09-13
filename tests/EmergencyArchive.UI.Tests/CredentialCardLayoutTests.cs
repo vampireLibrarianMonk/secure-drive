@@ -38,7 +38,7 @@ public sealed class CredentialCardLayoutTests : IDisposable
     [AvaloniaFact]
     public void CredentialsScreen_CardsFitWithinTheWindow()
     {
-        const double windowWidth = 900;
+        const double windowWidth = 1024; // the width in the user's screenshot
 
         // Seed a couple of credentials and build a real viewer over a real vault.
         using VaultSession session = VaultStore.Unlock(vaultDir, Password);
@@ -82,5 +82,13 @@ public sealed class CredentialCardLayoutTests : IDisposable
             Assert.True(right <= windowWidth + 0.5,
                 $"Button '{b.Content}' right edge {right:F1} exceeds window width {windowWidth}.");
         }
+
+        // The card must actually stretch to fill the available width, not sit at
+        // a narrow natural width with the rest of the window left blank (the
+        // reported bug where cards were stuck at ~420px on a wide window).
+        Border card = screen.GetVisualDescendants().OfType<Border>()
+            .First(b => b.Classes.Contains("card"));
+        Assert.True(card.Bounds.Width >= 700,
+            $"Card width {card.Bounds.Width:F1} is too narrow; it is not filling the window.");
     }
 }
