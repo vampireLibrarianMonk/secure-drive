@@ -90,7 +90,8 @@
                          PasswordChar="&#x2022;"
                          Text="{Binding Password}"
                          Watermark="Enter the archive password"
-                         FontSize="16" Height="40">
+                         FontSize="16" Height="40"
+                         IsEnabled="{Binding !IsBusy}">
                     <TextBox.KeyBindings>
                         <KeyBinding Gesture="Enter" Command="{Binding UnlockCommand}" />
                     </TextBox.KeyBindings>
@@ -103,6 +104,12 @@
                         HorizontalAlignment="Stretch"
                         HorizontalContentAlignment="Center"
                         Margin="0,16,0,0" />
+
+                <!-- Unlocking runs a deliberately slow, memory-hard KDF (scrypt,
+                     ~1 GiB); this indeterminate bar shows the app is working. -->
+                <ProgressBar IsIndeterminate="True"
+                             IsVisible="{Binding IsBusy}"
+                             Height="4" Margin="0,14,0,0" />
 
                 <TextBlock Text="{Binding StatusMessage}"
                            TextWrapping="Wrap" TextAlignment="Center"
@@ -583,13 +590,23 @@
                 <TextBlock TextWrapping="Wrap" FontSize="12" Opacity="0.8"
                            Text="Enter the password for the KeePass file (this is separate from your archive password)." />
                 <TextBox Text="{Binding KdbxPassword}" PasswordChar="&#x25CF;"
-                         Watermark="KeePass file password" />
+                         Watermark="KeePass file password"
+                         IsEnabled="{Binding !IsKdbxBusy}">
+                  <TextBox.KeyBindings>
+                    <KeyBinding Gesture="Enter" Command="{Binding ConfirmKdbxCommand}" />
+                  </TextBox.KeyBindings>
+                </TextBox>
                 <TextBlock Text="{Binding KdbxError}" Foreground="#D9534F"
                            TextWrapping="Wrap" IsVisible="{Binding HasKdbxError}" />
+                <!-- Argon2 (the KeePass KDF) is deliberately slow; show progress. -->
+                <ProgressBar IsIndeterminate="True" Height="4"
+                             IsVisible="{Binding IsKdbxBusy}" />
                 <StackPanel Orientation="Horizontal" Spacing="10">
                   <Button Content="CONTINUE" Command="{Binding ConfirmKdbxCommand}"
+                          IsEnabled="{Binding !IsKdbxBusy}"
                           Classes="primary" Padding="20,6" FontWeight="SemiBold" />
-                  <Button Content="CANCEL" Command="{Binding CancelKdbxCommand}" Padding="20,6" />
+                  <Button Content="CANCEL" Command="{Binding CancelKdbxCommand}"
+                          IsEnabled="{Binding !IsKdbxBusy}" Padding="20,6" />
                 </StackPanel>
               </StackPanel>
             </Border>
@@ -618,21 +635,20 @@
                    IsVisible="{Binding IsEmpty}" TextWrapping="Wrap" Opacity="0.75"
                    Text="No credentials are stored yet. Click ADD to create one. Importing a KeePass (.kdbx) file is coming soon." />
 
-        <!-- Credential cards -->
+        <!-- Credential cards. Both scrollbars are Auto: cards keep a sensible
+             minimum width so their buttons never overlap, and if the window is
+             narrower than that minimum a horizontal scrollbar appears so the
+             Edit/Delete/Copy/Reveal buttons are always reachable instead of
+             being clipped off the right edge. -->
         <ScrollViewer x:Name="CredentialsList"
-                      HorizontalScrollBarVisibility="Disabled"
+                      HorizontalScrollBarVisibility="Auto"
                       VerticalScrollBarVisibility="Auto"
                       IsVisible="{Binding !IsEditing}"
                       Padding="20,14,20,20">
-          <!-- Constrain the list to the scroll viewport width so the card rows
-               shrink to fit instead of laying out at their natural width and
-               being clipped (a disabled horizontal scrollbar clips, not wraps). -->
-          <ItemsControl ItemsSource="{Binding Items}"
-                        HorizontalAlignment="Stretch"
-                        MaxWidth="{Binding #CredentialsList.Bounds.Width}">
+          <ItemsControl ItemsSource="{Binding Items}" MaxWidth="980">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:CredentialItemViewModel">
-                <Border Classes="card" Margin="0,0,0,14">
+                <Border Classes="card" Margin="0,0,0,14" MinWidth="460">
                   <StackPanel Spacing="10">
                     <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
                       <TextBlock Text="{Binding Site}" FontWeight="SemiBold" FontSize="15"

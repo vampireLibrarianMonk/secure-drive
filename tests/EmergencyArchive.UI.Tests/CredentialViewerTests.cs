@@ -292,7 +292,7 @@ public sealed class CredentialViewerTests : IDisposable
     // --- KeePass (KDBX) import / export -------------------------------------
 
     [Fact]
-    public void BeginImport_ThenConfirm_MergesAndPersists()
+    public async Task BeginImport_ThenConfirm_MergesAndPersists()
     {
         // Produce a real .kdbx from two credentials.
         var source = CredentialDatabase.Empty
@@ -307,9 +307,10 @@ public sealed class CredentialViewerTests : IDisposable
             Assert.True(viewer.IsKdbxPrompt);
 
             viewer.KdbxPassword = "kdbx-pass";
-            viewer.ConfirmKdbxCommand.Execute(null);
+            await viewer.ConfirmKdbxCommand.ExecuteAsync(null);
 
             Assert.False(viewer.IsKdbxPrompt);          // prompt closed on success
+            Assert.False(viewer.IsKdbxBusy);            // busy cleared when done
             Assert.Equal(2, viewer.Items.Count);
         }
 
@@ -323,7 +324,7 @@ public sealed class CredentialViewerTests : IDisposable
     }
 
     [Fact]
-    public void Import_WrongKdbxPassword_ShowsError_AndDoesNotImport()
+    public async Task Import_WrongKdbxPassword_ShowsError_AndDoesNotImport()
     {
         byte[] kdbx = KdbxCredentialMapper.Export(
             CredentialDatabase.Empty.With(Credential.Create("s", "u", "p")), "right-pass");
@@ -332,20 +333,20 @@ public sealed class CredentialViewerTests : IDisposable
         var viewer = new CredentialViewModel(session);
         viewer.BeginImport(kdbx);
         viewer.KdbxPassword = "wrong-pass";
-        viewer.ConfirmKdbxCommand.Execute(null);
+        await viewer.ConfirmKdbxCommand.ExecuteAsync(null);
 
         Assert.True(viewer.IsKdbxPrompt);   // stays open on error
         Assert.True(viewer.HasKdbxError);
+        Assert.False(viewer.IsKdbxBusy);
         Assert.Empty(viewer.Items);
     }
 
     [Fact]
-    public void BeginExport_ThenConfirm_WritesBytesThroughTheView()
+    public async Task BeginExport_ThenConfirm_WritesBytesThroughTheView()
     {
         var db = CredentialDatabase.Empty.With(Credential.Create("bank.example", "alice", "pw1"));
 
         using VaultSession session = VaultStore.Unlock(vaultDir, Password);
-        var viewer = new CredentialViewModel(session);
         // seed the store so export has content
         CredentialStore.Save(session, db);
         var seeded = new CredentialViewModel(session);
@@ -355,7 +356,7 @@ public sealed class CredentialViewerTests : IDisposable
         Assert.True(seeded.IsKdbxPrompt);
 
         seeded.KdbxPassword = "export-pass";
-        seeded.ConfirmKdbxCommand.Execute(null);
+        await seeded.ConfirmKdbxCommand.ExecuteAsync(null);
 
         Assert.False(seeded.IsKdbxPrompt);
         Assert.NotNull(written);

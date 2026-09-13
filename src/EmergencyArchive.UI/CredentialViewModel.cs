@@ -123,6 +123,10 @@ public sealed partial class CredentialViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(HasKdbxError))]
     private string? kdbxError;
 
+    /// <summary>True while a KeePass import/export is running (slow Argon2 KDF).</summary>
+    [ObservableProperty]
+    private bool isKdbxBusy;
+
     public bool IsKdbxPrompt => KdbxPromptMode != KdbxMode.None;
 
     public bool HasKdbxError => !string.IsNullOrEmpty(KdbxError);
@@ -164,7 +168,12 @@ public sealed partial class CredentialViewModel : ObservableObject
         exportWriter = null;
     }
 
-    /// <summary>Confirms the KDBX prompt: runs the import or export with the entered password.</summary>
+    /// <summary>
+    /// Confirms the KDBX prompt: runs the import or export with the entered
+    /// password. The heavy KeePass work (Argon2 KDF) runs off the UI thread so
+    /// the progress indicator can animate; the store update runs back on the UI
+    /// thread. <see cref="IsKdbxBusy"/> drives the progress bar.
+    /// </summary>
     [RelayCommand]
     private async Task ConfirmKdbxAsync()
     {
@@ -174,17 +183,34 @@ public sealed partial class CredentialViewModel : ObservableObject
             return;
         }
 
+        string kdbxPassword = KdbxPassword;
+        KdbxError = null;
+        IsKdbxBusy = true;
         try
         {
             if (KdbxPromptMode == KdbxMode.Import)
             {
-                ImportFromKdbx(pendingImportBytes ?? [], KdbxPassword);
+                byte[] fileBytes = pendingImportBytes ?? [];
+                // Decode + decrypt off the UI thread (Argon2 is deliberately slow).
+                IReadOnlyList<Credential> imported =
+                    await Task.Run(() => KdbxCredentialMapper.Import(fileBytes, kdbxPassword));
+
+                foreach (Credential credential in imported)
+                {
+                    database = database.With(credential);
+                }
+
+                Persist();
+                Rebuild();
+                log?.Invoke($"Imported {imported.Count} credential(s) from a KeePass file.");
+                Summary = $"Imported {imported.Count} credential(s). {all.Count} total.";
             }
             else if (KdbxPromptMode == KdbxMode.Export && exportWriter is not null)
             {
-                byte[] bytes = KdbxCredentialMapper.Export(database, KdbxPassword);
+                CredentialDatabase snapshot = database;
+                byte[] bytes = await Task.Run(() => KdbxCredentialMapper.Export(snapshot, kdbxPassword));
                 await exportWriter(bytes);
-                log?.Invoke($"Exported {database.Count} credential(s) to a KeePass file.");
+                log?.Invoke($"Exported {snapshot.Count} credential(s) to a KeePass file.");
             }
 
             CancelKdbx();
@@ -203,23 +229,10 @@ public sealed partial class CredentialViewModel : ObservableObject
             AppLog.Handled("ConfirmKdbx (file io)", e);
             KdbxError = $"Could not complete: {e.Message}";
         }
-    }
-
-    /// <summary>
-    /// Merges the entries from a KeePass file into the store (each gets a fresh
-    /// id) and persists. Only counts are logged — never secret values.
-    /// </summary>
-    private void ImportFromKdbx(byte[] fileBytes, string kdbxPassword)
-    {
-        IReadOnlyList<Credential> imported = KdbxCredentialMapper.Import(fileBytes, kdbxPassword);
-        foreach (Credential credential in imported)
+        finally
         {
-            database = database.With(credential);
+            IsKdbxBusy = false;
         }
-
-        Persist();
-        Rebuild();
-        log?.Invoke($"Imported {imported.Count} credential(s) from a KeePass file.");
     }
 
     // --- Commands -----------------------------------------------------------
