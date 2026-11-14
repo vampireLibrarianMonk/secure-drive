@@ -200,6 +200,7 @@ this application.
 | Symptom | Cause | Fix |
 |---|---|---|
 | App shows **CREATE YOUR ARCHIVE** instead of a password box. | The drive has no vault yet (normal on first use). | Enter a password twice and click CREATE ARCHIVE. This is expected, not an error. |
+| *This archive is already open on this computer…* | The archive is already unlocked in another Emergency Archive window on this PC (a built-in guard against double-writing). | Close the other Emergency Archive window, then unlock again. |
 | `setup-drive.ps1` warns the Windows build is missing. | You have not published yet. | Run `scripts\publish.ps1`, then re-run `setup-drive.ps1`. |
 | Script refuses the drive. | It is the system drive, or already has files. | Use a different drive, or add `-Force` (nothing is deleted). |
 | *"A .NET SDK matching global.json was not found."* | The SDK is not installed. | Install .NET SDK 10 — see [BUILD.md](BUILD.md). |

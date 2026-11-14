@@ -23,6 +23,8 @@ Windows computer. No internet, no accounts, nothing installed on the computer.
 - Almost any USB stick of **8 GB or larger** works. A 32 GB stick is ideal.
 - The stick should be formatted as **exFAT** (this is the most common format and
   works on Windows, Linux, and macOS). Most new sticks already are.
+- Individual files are limited to **2 GB each** by the importer — a safety
+  limit, and far more than scanned documents or photos need.
 
 To check or set the format on Windows: open **This PC**, right-click the USB
 drive, choose **Format…**, set **File system** to **exFAT**, and click Start.
@@ -227,6 +229,7 @@ the activity log records that an action happened, never a secret value.
 | Blue "Windows protected your PC" warning | Windows doesn't recognise the app's publisher (normal for internet downloads). | Click **More info** → **Run anyway**. |
 | The app opens to **CREATE YOUR ARCHIVE** | The stick has no archive yet (first use). | Set a password and click CREATE ARCHIVE. This is expected. |
 | *Unable to unlock archive. Check the password…* | Wrong password. | Try again carefully after the 5-second wait. There is **no** password recovery. |
+| *This archive is already open on this computer. Close the other Emergency Archive window first.* | The archive is already unlocked in another Emergency Archive window on this PC — a built-in guard stops two copies from writing at the same time. | Close the other Emergency Archive window, then unlock again. This never appears when the stick is used on a different computer. |
 | *Archive integrity problem detected. Do not modify this USB.* | The archive on the stick may be damaged. | Don't write to the stick. Use another copy of the stick if you have one, or see `public\RECOVERY-INSTRUCTIONS.txt` on the drive. |
 | A search finds nothing you expected | The search index may need rebuilding. | In **Setup → Maintenance**, click **REBUILD SEARCH INDEX**. Your documents are safe. |
 
