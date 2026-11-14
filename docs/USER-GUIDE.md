@@ -31,7 +31,7 @@ drive, choose **Format…**, set **File system** to **exFAT**, and click Start.
 Formatting **erases the stick**, so use an empty one or copy anything off first.
 
 <!-- IMAGE: Windows "Format" dialog for a USB drive with the File system dropdown set to exFAT. -->
-*(Screenshot pending — see [reference_images/README.md](../reference_images/README.md) for the capture checklist.)*
+![The Windows Format dialog with File system set to exFAT](../reference_images/format-usb-exfat.png)
 
 > Tip: note the **drive letter** Windows gives the stick (for example `D:` or
 > `E:`). You will use it in the next step.
@@ -46,7 +46,7 @@ Formatting **erases the stick**, so use an empty one or copy anything off first.
    - **Linux:** `EmergencyArchive-<version>-linux.zip`
 
 <!-- IMAGE: GitHub Releases page with the latest release's downloadable .zip assets (windows and linux) highlighted. -->
-*(Screenshot pending — see [reference_images/README.md](../reference_images/README.md) for the capture checklist.)*
+![The GitHub Releases page for v0.4.0 with the Assets list expanded](../reference_images/github-download-release.png)
 
 > If you are not sure where the Releases page is, look on the project's main
 > page for a link that says **Releases** on the right-hand side. Nothing gets

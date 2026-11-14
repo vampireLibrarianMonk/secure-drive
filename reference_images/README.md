@@ -44,10 +44,10 @@ Each entry: **file name** — what to capture. (See the matching
 Used in [docs/USER-GUIDE.md](../docs/USER-GUIDE.md):
 
 - [x] `hero-main-screen.png` — the unlocked archive: search box + document list grouped by folder (a friendly hero shot). *(captured — sample docs)*
-- [ ] `format-usb-exfat.png` — Windows "Format" dialog for a USB drive, File system set to exFAT. *(manual: capture on a scratch stick; the dialog cannot be scripted safely)*
-- [ ] `github-download-release.png` — GitHub Releases page with the latest `.zip` asset highlighted. *(manual: needs an interactive browser session on the real Releases page)*
+- [x] `format-usb-exfat.png` — Windows "Format" dialog for a USB drive, File system set to exFAT. *(captured — the real dialog for the stick, opened by `tools/CaptureScreens/open-format-dialog.ps1` + `capture-format-dialog.ps1`; dismissed with WM_CLOSE, never formatted)*
+- [x] `github-download-release.png` — GitHub Releases page with the latest `.zip` assets highlighted. *(captured — `tools/playwright/capture-releases.mjs` drives the real Releases page and outlines the Assets panel)*
 - [x] `drive-contents-after-copy.png` — File Explorer showing the stick after copying: `START-WINDOWS.exe` at top level with `app/ vault/ public/`. *(captured — real stick, file names only)*
-- [ ] `windows-smartscreen-run-anyway.png` — the blue "Windows protected your PC" dialog, showing "More info" → "Run anyway". *(manual: requires running a Mark-of-the-Web-flagged exe; capture only the dialog, never the desktop)*
+- [ ] `windows-smartscreen-run-anyway.png` — the blue "Windows protected your PC" dialog, showing "More info" → "Run anyway". *(pending — `tools/CaptureScreens/capture-smartscreen.ps1` + `poll-smartscreen.ps1` flag a temp copy of the launcher and catch the dialog; the app never executes. On the current network the SmartScreen reputation service never returns a verdict, so the dialog cannot appear — retry on a different network.)*
 - [x] `create-archive-screen.png` — the CREATE YOUR ARCHIVE screen (new password + repeat + CREATE ARCHIVE button). *(captured)*
 - [x] `setup-overview.png` — the Setup screen showing the numbered cards (1 Estate Planning … 6 Password Manager). *(captured — status card + card 1)*
 - [x] `estate-planning-letter.png` — the Estate Planning card with the editable letter box and SAVE LETTER button. *(captured — "Alex Doe" template filled)*
