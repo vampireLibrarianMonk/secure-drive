@@ -38,12 +38,16 @@ public class ChangePasswordTests : IDisposable
     [Fact]
     public void ChangePassword_RejectsPolicyViolations()
     {
-        using VaultSession session = VaultStore.Unlock(vaultDir, Password);
+        using (VaultSession session = VaultStore.Unlock(vaultDir, Password))
+        {
+            var exception = Assert.Throws<ArgumentException>(() => session.ChangePassword("short"));
 
-        var exception = Assert.Throws<ArgumentException>(() => session.ChangePassword("short"));
+            Assert.Contains("at least 12 characters", exception.Message);
+        }
 
-        Assert.Contains("at least 12 characters", exception.Message);
-        // The old password still works — nothing was changed.
+        // The old password still works — nothing was changed. (Opened after the
+        // first session closes: the single-instance guard forbids two sessions
+        // on the same archive.)
         using VaultSession unchanged = VaultStore.Unlock(vaultDir, Password);
         Assert.Equal(documentContent, unchanged.ReadFile("policy.txt"));
     }

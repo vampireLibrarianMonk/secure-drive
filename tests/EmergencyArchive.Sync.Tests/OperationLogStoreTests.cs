@@ -24,12 +24,16 @@ public class OperationLogStoreTests : IDisposable
     [Fact]
     public void SaveAndLoad_RoundTripsEntries()
     {
-        using VaultSession session = VaultStore.Unlock(vaultDir, Password);
-        var log = new OperationLog();
-        log.Append("Update", "Update committed: version 2026.09.06.001.");
-        log.Append("Verify", "Verification passed: 42 document(s) checked.");
-        OperationLogStore.Save(session, log);
+        using (VaultSession session = VaultStore.Unlock(vaultDir, Password))
+        {
+            var log = new OperationLog();
+            log.Append("Update", "Update committed: version 2026.09.06.001.");
+            log.Append("Verify", "Verification passed: 42 document(s) checked.");
+            OperationLogStore.Save(session, log);
+        }
 
+        // Fresh session (the single-instance guard forbids two concurrent
+        // sessions on the same archive) — the saved log round-trips.
         using VaultSession session2 = VaultStore.Unlock(vaultDir, Password);
         OperationLog loaded = OperationLogStore.Load(session2);
 
