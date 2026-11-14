@@ -30,6 +30,7 @@
     <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
     <!-- Headless UI tests (renders the real control tree + bindings in memory). -->
     <PackageVersion Include="Avalonia.Headless.XUnit" Version="11.3.21" />
+    <PackageVersion Include="Avalonia.Headless" Version="11.3.21" />
   </ItemGroup>
 
 </Project>

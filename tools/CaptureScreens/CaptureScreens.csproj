@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Headless screenshot capture: drives the REAL Avalonia app through the
+       states documented in docs/USER-GUIDE.md and captures PNG frames into
+       reference_images/ (the slugs referenced by the guides). Runs with no
+       display — use inside the pinned SDK container or locally. -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Headless" />
+    <ProjectReference Include="..\..\src\EmergencyArchive.UI\EmergencyArchive.UI.csproj" />
+  </ItemGroup>
+
+</Project>
