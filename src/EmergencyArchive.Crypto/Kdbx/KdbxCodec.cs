@@ -34,11 +34,12 @@ public static class KdbxCodec
         throw new KdbxFormatException($"Unsupported KDBX major version {header.MajorVersion}.");
     }
 
-    /// <summary>Encrypts a database as a KDBX 4 file (Argon2id + AES-256-CBC + GZip).</summary>
-    public static byte[] Write(KdbxDatabase database, string password)
+    /// <summary>Encrypts a database as a KDBX 4 file (Argon2id + AES-256-CBC + GZip).
+    /// The optional cost lets the credential exporter pin its own KDF posture.</summary>
+    public static byte[] Write(KdbxDatabase database, string password, Argon2Cost? cost = null, DateTime? nowUtc = null)
     {
         ArgumentNullException.ThrowIfNull(database);
         ArgumentNullException.ThrowIfNull(password);
-        return Kdbx4Writer.Write(database, password);
+        return Kdbx4Writer.Write(database, password, cost, nowUtc);
     }
 }

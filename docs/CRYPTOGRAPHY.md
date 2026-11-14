@@ -48,7 +48,11 @@ RAM; Setup Mode can lower this for constrained hosts.
   (8 random bytes), `scryptCostParam` (N), `scryptBlockSize` (r), wrapped
   `primaryMasterKey`/`hmacMasterKey` (AES-KW), `versionMac`
   (HMAC-SHA-256 over the big-endian version, keyed with the MAC masterkey).
-  KEK = scrypt(password, salt‖pepper, N, r, p=1, 32 bytes).
+  KEK = scrypt(password, salt, N, r, p=1, 32 bytes). (The implementation
+  carries an optional `pepper` argument but deliberately does not use it: a
+  pepper stored on the drive adds nothing against an attacker who holds the
+  drive, and one NOT stored would break independent recovery with standard
+  Cryptomator software, which derives the KEK from the salt alone.)
 - `vault.cryptomator` — JWT (HS-256, key = encMasterKey‖macMasterKey):
   `format` 8, `cipherCombo` `SIV_GCM`, `shorteningThreshold` 220, `jti` UUID.
 - Names — NFC-normalized UTF-8, encrypted with AES-SIV

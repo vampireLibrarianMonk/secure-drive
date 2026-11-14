@@ -6,7 +6,7 @@ due-diligence sweep), a **red/blue cycle over the post-0.4.0 surfaces**
 It is not a substitute for an independent third-party audit.
 
 Scope reviewed at commit-level with tests added for each fix. As of round 6
-the full suite is **309 tests, 0 failures** across crypto, integrity, sync,
+the full suite is **310 tests, 0 failures** across crypto, integrity, sync,
 search, and headless UI.
 
 ---

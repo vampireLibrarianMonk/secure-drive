@@ -28,7 +28,7 @@ updates, Verify Archive), Setup Mode administration, Linux x64
 self-contained deployment (Docker-validated), replica management, the
 in-app password manager with KeePass (KDBX) import/export, and the
 hardening pass (secret scanning, dependency audit, hardening checklist) are
-in place — **309 tests green** on both Windows and Linux (verified in the
+in place — **310 tests green** on both Windows and Linux (verified in the
 pinned `mcr.microsoft.com/dotnet/sdk:10.0` container). Remaining manual
 items: Cryptomator interop drill and the pre-release checklist in
 [docs/HARDENING.md](docs/HARDENING.md). See [CHANGELOG.md](CHANGELOG.md).

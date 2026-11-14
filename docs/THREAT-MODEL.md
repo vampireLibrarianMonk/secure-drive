@@ -54,11 +54,38 @@ Status: living document. Baseline from spec §23–§25.
 
 ## Secret-handling rules (spec §19, §20)
 
-- Never log or persist passwords/keys; never pass them via command line or
-  environment variables; avoid immutable managed strings for secrets where
-  practical; clear sensitive buffers; rate-limit unlock attempts in-app
-  (while remembering that an attacker with the drive bypasses app lockout).
+- Never log or persist passwords/keys; never pass them via command line;
+  clear derived key material and password byte-copies immediately
+  (`DeriveKek`, `CompositeKey`, `VaultKeys` on dispose); rate-limit unlock
+  attempts in-app (while remembering that an attacker with the drive bypasses
+  app lockout by attacking the KDF offline).
 - Logs contain operational metadata only, and live inside encrypted storage.
+
+## Password-related attack surface (red/blue cycle, 2026-11)
+
+- **Offline guessing is the primary attack.** scrypt (N=2²⁰, r=8) costs about
+  1 GiB of RAM and roughly a second per guess on a fast CPU core; GPU rigs are
+  memory-bandwidth-bound to tens of guesses per second. A four/five-word
+  passphrase stands; a `Summer2024!`-style password does not. The in-app
+  5-second pause adds nothing against this (documented above).
+- **Copied secrets live on the host clipboard.** Any local application can
+  read the clipboard, and Windows clipboard history (Win+V) may retain the
+  entry — with cloud sync it can even leave the machine. Secret copies are
+  now auto-cleared after 30 seconds; clipboard *history* still holds the
+  older entry, so the user guide says to disable history on trusted hosts.
+- **Passwords transit through managed strings.** The UI layer (text boxes)
+  makes immutable strings unavoidable in Avalonia; derived byte copies are
+  zeroized and entry boxes are cleared on lock, but a memory dump of a
+  hostile host can still contain the password. A compromised host defeats
+  the archive anyway; we minimize retention rather than claim erasure.
+- **Exported KeePass files are their own attack surface.** Their KDF now
+  matches the archive's posture (1 GiB Argon2id, 4 passes) instead of
+  KeePassXC defaults, so the export is not the weakest link. The export
+  file's password is a second secret to guard, and the file itself should be
+  stored as carefully as the drive.
+- **The app never verifies the "current password" on a change** — password
+  change happens only inside an authenticated session, which is the
+  authentication. There is no reset and no recovery.
 
 ## Assumptions
 

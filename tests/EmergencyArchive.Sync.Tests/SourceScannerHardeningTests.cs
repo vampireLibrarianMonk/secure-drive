@@ -12,7 +12,6 @@ namespace EmergencyArchive.Sync.Tests;
 /// </summary>
 public sealed class SourceScannerHardeningTests : IDisposable
 {
-    private const string Password = "correct horse battery staple";
     private readonly string tempRoot;
     private readonly string sourceDir;
     private readonly string outsideDir;
@@ -113,3 +112,4 @@ public sealed class SourceScannerHardeningTests : IDisposable
         Assert.DoesNotContain(result.Files, f => f.RelativePath == "source/huge.bin");
     }
 }
+

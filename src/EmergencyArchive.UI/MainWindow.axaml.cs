@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IO;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
@@ -45,16 +46,25 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>Copies a secret field's real value (works whether revealed or hidden).</summary>
+    /// <summary>
+    /// Copies a secret field's real value (works whether revealed or hidden).
+    /// Secrets are auto-cleared from the clipboard after a grace period.
+    /// </summary>
     private void OnCopySecretClicked(object? sender, RoutedEventArgs e)
     {
         if (sender is Control { Tag: SecretFieldViewModel secret })
         {
-            CopyToClipboard(secret.CopyValue, secret.Label);
+            CopyToClipboard(secret.CopyValue, secret.Label, isSecret: true);
         }
     }
 
-    private async void CopyToClipboard(string value, string label)
+    /// <summary>
+    /// Copies a value to the clipboard. Secrets are overwritten with an empty
+    /// string after a 30-second grace period (password-related attack review,
+    /// 2026-11): otherwise any local application — or Windows clipboard
+    /// history — sees the secret indefinitely.
+    /// </summary>
+    private async void CopyToClipboard(string value, string label, bool isSecret = false)
     {
         try
         {
@@ -67,13 +77,42 @@ public partial class MainWindow : Window
 
             await clipboard.SetTextAsync(value);
             ViewModel.NoteCredentialCopied(label);
-            ViewModel.StatusMessage = $"Copied '{label}' to the clipboard.";
+            ViewModel.StatusMessage = isSecret
+                ? $"Copied '{label}' to the clipboard — cleared automatically in 30 seconds."
+                : $"Copied '{label}' to the clipboard.";
+
+            if (isSecret)
+            {
+                _ = ClearClipboardAfterGraceAsync(clipboard, grace: TimeSpan.FromSeconds(30));
+            }
         }
         catch (Exception ex)
         {
             // Never swallow silently: record it and tell the user.
             AppLog.Handled("CopyToClipboard", ex);
             ViewModel.StatusMessage = $"Could not copy '{label}': {ex.Message}";
+        }
+    }
+
+    /// <summary>
+    /// Overwrites the clipboard with an empty string once the grace period has
+    /// passed. This clears the CURRENT clipboard unconditionally (a read-back
+    /// comparison would use an obsolete API on this Avalonia line); OS
+    /// clipboard history (Win+V) may still hold the earlier entry, which is
+    /// documented in the guides.
+    /// </summary>
+    private static async Task ClearClipboardAfterGraceAsync(
+        Avalonia.Input.Platform.IClipboard clipboard, TimeSpan grace)
+    {
+        await Task.Delay(grace);
+        try
+        {
+            await clipboard.SetTextAsync(string.Empty);
+        }
+        catch (Exception ex)
+        {
+            // Best effort only — the window may already be gone.
+            AppLog.Handled("Clipboard clear after grace period", ex);
         }
     }
 

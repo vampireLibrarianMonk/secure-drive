@@ -44,6 +44,7 @@ public sealed partial class VaultSession : IDisposable
 
         disposed = true;
         keys.Dispose();
+        writeGate.Dispose();
     }
 
     private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(disposed, this);
@@ -100,13 +101,29 @@ public sealed partial class VaultSession : IDisposable
         return entries;
     }
 
+    /// <summary>
+    /// Serializes vault writes within this session. Staged writes use a shared
+    /// per-target sidecar (name + ".staging"), so two concurrent writers to the
+    /// same path (background indexing vs. the activity log, for example) would
+    /// otherwise delete each other's staging file mid-write.
+    /// </summary>
+    private readonly SemaphoreSlim writeGate = new(1, 1);
+
     /// <summary>Writes (or overwrites) a file at a cleartext-relative path.</summary>
     public void WriteFile(string cleartextRelativePath, Stream content)
     {
         ThrowIfDisposed();
-        string[] segments = SplitPath(cleartextRelativePath);
-        (string ciphertextDir, string dirId) = EnsureDirectory(segments.AsSpan(0, segments.Length - 1));
-        WriteFileContent(ciphertextDir, dirId, segments[^1], content);
+        writeGate.Wait();
+        try
+        {
+            string[] segments = SplitPath(cleartextRelativePath);
+            (string ciphertextDir, string dirId) = EnsureDirectory(segments.AsSpan(0, segments.Length - 1));
+            WriteFileContent(ciphertextDir, dirId, segments[^1], content);
+        }
+        finally
+        {
+            writeGate.Release();
+        }
     }
 
     public void WriteFile(string cleartextRelativePath, byte[] content) =>

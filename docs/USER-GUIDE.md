@@ -199,7 +199,10 @@ Click **OPEN PASSWORD MANAGER** to:
 
 - **See your credentials** as cards, searchable by site or username. Secret
   values are hidden until you tap that value's **reveal** control, and every
-  value has a **COPY** button so you never have to retype it.
+  value has a **COPY** button so you never have to retype it. Copied secrets
+  clear themselves from the clipboard after 30 seconds — but Windows
+  clipboard **history** (Win+V) may still keep the earlier entry, so on a
+  shared computer, disable clipboard history or paste-then-delete instead.
 - **Add, edit, or delete** entries with the buttons on each card.
 - **IMPORT / EXPORT** a KeePass `.kdbx` file, so credentials can move to or
   from KeePass, KeePassXC, and other KeePass-compatible apps. The import and

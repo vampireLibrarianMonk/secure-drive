@@ -64,6 +64,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   inside a source folder are never followed (they could pull files from
   outside the source into the archive or create traversal cycles), and single
   files above the 2 GiB per-document cap are excluded from scanning and import.
+- **Password hardening** (password-related attack review): exported KeePass
+  files now use the archive's own KDF posture (1 GiB Argon2id, 4 passes)
+  instead of KeePassXC-style defaults — the export is no longer the weakest
+  link; copied secrets auto-clear from the clipboard after 30 seconds (with
+  an honest note that OS clipboard history may retain them); the threat model
+  now documents the password attack surface (offline-guessing economics,
+  clipboard exposure, and the managed-string reality of UI-entered secrets).
+- **Concurrent vault writes no longer race** (found by the scenario suite):
+  background indexing and the activity log write through the same staging
+  sidecar path, and two concurrent writers could delete each other's staging
+  file mid-write — surfacing as a spurious "unlock failed" I/O error on rapid
+  lock/unlock. Vault writes are now serialized per session.
 - **Password manager viewer layout**: the credential list is a proper
   vertical-scroll-only region that fills the window, cards stretch to the
   viewport width (no more right-edge clipping), and the list+editor pair sits

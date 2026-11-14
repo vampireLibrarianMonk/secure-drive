@@ -19,6 +19,18 @@ public static class KdbxCredentialMapper
     public const string NotesKey = "Notes";
 
     /// <summary>
+    /// Password-related attack review (2026-11): an exported .kdbx leaves the
+    /// encrypted vault, so it must NOT be the weakest link — KeePassXC-style
+    /// defaults (64 MiB / 2 passes) would make the exported file ~16x cheaper
+    /// to crack offline than the archive itself. Match the archive's posture:
+    /// 1 GiB of Argon2id memory, 4 passes. KeePass/KeePassXC can still open
+    /// it: the parameters travel in the file and stay within the importer's
+    /// KDBX hardening caps (≤ 2 GiB / ≤ 64 passes).
+    /// </summary>
+    public static readonly Argon2Cost ExportArgon2Cost =
+        new(MemoryBytes: 1024UL * 1024 * 1024, Iterations: 4, Parallelism: 1);
+
+    /// <summary>
     /// Reads a KeePass file (KDBX 3.1 or 4.x, password only) and converts every
     /// entry into a credential with a fresh id. Throws the same exceptions as
     /// <see cref="KdbxCodec.Read"/> (wrong password / not a valid KDBX file).
@@ -44,7 +56,8 @@ public static class KdbxCredentialMapper
             kdbx.Entries.Add(ToKdbxEntry(credential));
         }
 
-        return KdbxCodec.Write(kdbx, password);
+        // Password-related attack review (2026-11): see ExportArgon2Cost.
+        return KdbxCodec.Write(kdbx, password, ExportArgon2Cost);
     }
 
     private static Credential ToCredential(KdbxEntry entry)

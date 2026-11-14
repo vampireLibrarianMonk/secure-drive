@@ -3,6 +3,13 @@ using System.Security.Cryptography;
 namespace EmergencyArchive.Crypto.Kdbx;
 
 /// <summary>
+/// Argon2 cost parameters for KDBX 4 files (public: the credential exporter
+/// pins a documented posture and tests assert it). Defaults match a modern
+/// KeePassXC database; the exporter raises them to the archive's own posture.
+/// </summary>
+public sealed record Argon2Cost(ulong MemoryBytes = 64UL * 1024 * 1024, ulong Iterations = 2, uint Parallelism = 1);
+
+/// <summary>
 /// Writes a KDBX 4 database (password only) that KeePass / KeePassXC can open:
 /// Argon2id KDF, AES-256-CBC content cipher, GZip compression, and a ChaCha20
 /// inner protected-value stream. Mirrors the reader exactly so a written file
@@ -10,9 +17,6 @@ namespace EmergencyArchive.Crypto.Kdbx;
 /// </summary>
 internal static class Kdbx4Writer
 {
-    /// <summary>Argon2 cost parameters (defaults match a modern KeePassXC database).</summary>
-    public sealed record Argon2Cost(ulong MemoryBytes = 64UL * 1024 * 1024, ulong Iterations = 2, uint Parallelism = 1);
-
     public static byte[] Write(KdbxDatabase database, string password, Argon2Cost? cost = null, DateTime? nowUtc = null)
     {
         cost ??= new Argon2Cost();

@@ -1,7 +1,7 @@
 # TODO — Avalonia 11 → 12 migration
 
 **Status:** deferred (not urgent). We are on the stable **Avalonia 11.3.21**
-line, which builds and passes the full suite (309 tests) with **zero known
+line, which builds and passes the full suite (310 tests) with **zero known
 vulnerabilities**. Dependabot is configured to **hold** the Avalonia major
 (`.github/dependabot.yml` ignores `Avalonia*` semver-major) so it stops
 proposing a PR that cannot build. Do this migration deliberately, on its own

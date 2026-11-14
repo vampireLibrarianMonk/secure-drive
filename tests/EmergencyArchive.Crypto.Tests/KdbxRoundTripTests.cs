@@ -16,7 +16,7 @@ public class KdbxRoundTripTests
     private const string Password = "correct horse battery staple";
 
     // Low cost so the KDF is fast in tests (still real Argon2id).
-    private static readonly Kdbx4Writer.Argon2Cost FastCost =
+    private static readonly Argon2Cost FastCost =
         new(MemoryBytes: 1024 * 1024, Iterations: 1, Parallelism: 1);
 
     private static KdbxDatabase Sample()
