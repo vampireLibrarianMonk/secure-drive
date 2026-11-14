@@ -66,6 +66,15 @@ internal sealed class KdbxHeader
         {
             byte fieldId = reader.ReadByte();
             int length = v4 ? reader.ReadInt32() : reader.ReadUInt16();
+
+            // The header is unauthenticated input: a giant field length would
+            // allocate attacker-chosen memory before any integrity check runs.
+            const int MaxHeaderFieldBytes = 16 * 1024 * 1024;
+            if (length > MaxHeaderFieldBytes)
+            {
+                throw new KdbxFormatException("KDBX header field is unreasonably large (the file may be hostile).");
+            }
+
             byte[] fieldData = reader.ReadBytes(length);
 
             var id = (KdbxFormat.HeaderFieldId)fieldId;

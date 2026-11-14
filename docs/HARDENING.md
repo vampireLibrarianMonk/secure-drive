@@ -12,6 +12,9 @@ scheduled or documented as a manual step for the archive owner.
 | Dependency audit | ✅ Automated check — `dotnet list EmergencyArchive.slnx package --vulnerable --include-transitive` reports **zero vulnerable packages** (verified 2026-09-06); central package pinning keeps the graph reviewable | Directory.Packages.props |
 | Corruption testing | ✅ Automated — tampered headers/masterkey/config, truncated files, flipped bits in chunks, corrupted vault files detected and reported (Crypto + Search test suites) | tests/ |
 | Power-loss / interruption testing | ✅ Automated — staged per-file writes (temp + atomic move), manifest written last as commit marker, interrupted-update idempotency test | tests/EmergencyArchive.Sync.Tests |
+| KDBX import bounds | ✅ Automated — attacker-chosen KDF parameters (memory/passes/rounds/parallelism) capped before execution; header, VariantDictionary, block-stream, decompression, and entry-count bounds; hostile files fail fast (red/blue round 6) | tests/EmergencyArchive.Crypto.Tests/KdbxHardeningTests |
+| Source-scan hardening | ✅ Automated — symlinks/junctions planted in source folders are never followed; per-document size cap (2 GiB) | tests/EmergencyArchive.Sync.Tests/SourceScannerHardeningTests |
+| Vault path traversal | ✅ Automated — `..`, empty, and absolute-ish paths rejected; plaintext names/contents never reach the disk | tests/EmergencyArchive.Crypto.Tests/VaultPathHardeningTests |
 | Recovery testing | ✅ Automated + procedure — full vault round-trips, index rebuild after corruption (spec §24), recovery instructions deployed to `public\`; manual Cryptomator-app round-trip is a pre-release checklist item | docs/RECOVERY.md |
 
 ## Manual pre-release checklist

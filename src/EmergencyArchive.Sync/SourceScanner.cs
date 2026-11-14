@@ -35,6 +35,14 @@ public static class SourceScanner
         "desktop.ini",
     ];
 
+    /// <summary>
+    /// Per-document size policy: files above this size are never scanned or
+    /// imported (a multi-gigabyte file would stall hashing/encryption for
+    /// hours and could exhaust the drive). This is a document archive, not a
+    /// bulk-storage container.
+    /// </summary>
+    public const long MaxScanFileBytes = 2L * 1024 * 1024 * 1024;
+
     public static ScannedFileSet Scan(SourceConfiguration configuration)
     {
         List<ScannedFile> files = [];
@@ -54,7 +62,10 @@ public static class SourceScanner
             {
                 RecurseSubdirectories = source.Recursive,
                 IgnoreInaccessible = true,
-                AttributesToSkip = FileAttributes.Hidden | FileAttributes.System,
+                // ReparsePoint: never follow symlinks/junctions planted inside a
+                // source folder — they can pull files from outside the source
+                // (exfiltration into the archive) or create traversal cycles.
+                AttributesToSkip = FileAttributes.Hidden | FileAttributes.System | FileAttributes.ReparsePoint,
             };
 
             foreach (string filePath in Directory.EnumerateFiles(source.Path, "*", options))
@@ -73,6 +84,20 @@ public static class SourceScanner
                 }
 
                 var info = new FileInfo(filePath);
+                if (info.LinkTarget is not null)
+                {
+                    continue; // belt and braces: skip symlinks even if not flagged above
+                }
+
+                // Per-document size policy (spec section 13 complement): a
+                // single source file above the cap is not scanned or imported —
+                // hashing and encrypting multi-gigabyte files would stall the
+                // update and could exhaust drive space.
+                if (info.Length > MaxScanFileBytes)
+                {
+                    continue;
+                }
+
                 files.Add(new ScannedFile(archivePath, filePath, info.Length, info.LastWriteTimeUtc, Sha256.ComputeFile(filePath)));
             }
         }

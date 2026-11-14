@@ -1,0 +1,12 @@
+{
+  "name": "emergency-archive-playwright",
+  "private": true,
+  "version": "0.4.0",
+  "description": "Playwright scenarios for the Emergency Archive credential HTML export page (the app's one browser-renderable surface).",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0"
+  }
+}

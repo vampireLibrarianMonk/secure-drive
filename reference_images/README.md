@@ -26,12 +26,13 @@ Used in [docs/USER-GUIDE.md](../docs/USER-GUIDE.md):
 - [ ] `drive-contents-after-copy.png` — File Explorer showing the stick after copying: `START-WINDOWS.exe` at top level with `app/ vault/ public/`.
 - [ ] `windows-smartscreen-run-anyway.png` — the blue "Windows protected your PC" dialog, showing "More info" → "Run anyway".
 - [ ] `create-archive-screen.png` — the CREATE YOUR ARCHIVE screen (new password + repeat + CREATE ARCHIVE button).
-- [ ] `setup-overview.png` — the Setup screen showing the numbered cards (1 Estate Planning … 5 Security).
+- [ ] `setup-overview.png` — the Setup screen showing the numbered cards (1 Estate Planning … 6 Password Manager).
 - [ ] `estate-planning-letter.png` — the Estate Planning card with the editable letter box and SAVE LETTER button.
 - [ ] `add-documents.png` — the Your Documents card: category dropdown, ADD FILE(S), and folder-import area.
 - [ ] `manage-documents.png` — the Manage Documents card with a document selected: rename box, move dropdown, REPLACE FILE / DELETE.
 - [ ] `unlock-screen.png` — the password (unlock) screen with the single password box and UNLOCK button.
 - [ ] `search-results.png` — search results (e.g. "insurance") with excerpts, grouped by folder.
+- [ ] `password-manager.png` — the password manager viewer: search box, credential cards with hidden values, reveal toggles, and COPY buttons.
 
 ## Tips for good screenshots
 

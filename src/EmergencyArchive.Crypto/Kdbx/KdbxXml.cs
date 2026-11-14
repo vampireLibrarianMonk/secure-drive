@@ -63,6 +63,11 @@ internal static class KdbxXml
             return database;
         }
 
+        // Defensive bound: the payload is already capped at 128 MiB, but a
+        // database with millions of tiny entries would still balloon the
+        // in-memory credential list. Real KeePass databases are far smaller.
+        const int MaxEntries = 100_000;
+        int count = 0;
         foreach (XElement entry in root.Descendants("Entry"))
         {
             // Skip entries inside the Recycle Bin is not tracked here; KeePass
@@ -70,6 +75,11 @@ internal static class KdbxXml
             if (entry.Ancestors("History").Any())
             {
                 continue;
+            }
+
+            if (++count > MaxEntries)
+            {
+                throw new KdbxFormatException("KDBX database has too many entries to import.");
             }
 
             database.Entries.Add(ReadEntry(entry));

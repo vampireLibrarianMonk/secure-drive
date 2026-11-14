@@ -111,9 +111,27 @@ public partial class MainWindow : Window
                 return;
             }
 
+            // Bounded read: the picked file is untrusted input, and an
+            // unbounded CopyToAsync would balloon memory on a mislabeled or
+            // hostile giant file before any validation runs.
+            const long MaxKdbxBytes = 512L * 1024 * 1024;
             await using Stream input = await files[0].OpenReadAsync();
             using var buffer = new MemoryStream();
-            await input.CopyToAsync(buffer);
+            byte[] copyBuffer = new byte[81920];
+            long total = 0;
+            int read;
+            while ((read = await input.ReadAsync(copyBuffer)) > 0)
+            {
+                total += read;
+                if (total > MaxKdbxBytes)
+                {
+                    ViewModel.StatusMessage = "That KeePass file is too large to import (512 MB limit).";
+                    return;
+                }
+
+                buffer.Write(copyBuffer, 0, read);
+            }
+
             credentials.BeginImport(buffer.ToArray());
         }
         catch (Exception ex)

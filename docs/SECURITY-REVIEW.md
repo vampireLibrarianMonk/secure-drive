@@ -1,13 +1,13 @@
 # Security Review — Emergency Archive
 
 This records an internal adversarial review pass (five focused rounds plus a
-due-diligence sweep) and, importantly, an **honest statement of residual risk**.
+due-diligence sweep), a **red/blue cycle over the post-0.4.0 surfaces**
+(round 6), and, importantly, an **honest statement of residual risk**.
 It is not a substitute for an independent third-party audit.
 
-Scope reviewed at commit-level with tests added for each fix. At the time of
-this review the full suite was **215 tests, 0 failures** across crypto,
-integrity, sync, search, and headless UI; it has since grown to **264 tests, 0
-failures** as the password manager and KeePass (KDBX) import/export were added.
+Scope reviewed at commit-level with tests added for each fix. As of round 6
+the full suite is **309 tests, 0 failures** across crypto, integrity, sync,
+search, and headless UI.
 
 ---
 
@@ -41,6 +41,31 @@ failures** as the password manager and KeePass (KDBX) import/export were added.
 Due diligence also: **zero vulnerable packages** (incl. transitive), tree is
 `dotnet format`-clean, safe in-minor dependency bumps applied, container SDK
 image confirmed current, and a pre-commit hook (secret scan + format) added.
+
+---
+
+## Round 6 — red/blue cycle (2026-11-13)
+
+A red/blue pass over the surfaces added since the last review — KDBX
+import/export, the update engine's filesystem behavior, and the deployment
+scripts. Method: enumerate attack vectors against the actual code, verify
+each in source, fix, then exercise the fix with adversarial tests. Findings
+fixed with tests:
+
+| # | Severity | Area | Finding → Fix |
+|---|---|---|---|
+| 6.1 | Medium | KDBX import | The KDF runs **before** the file is authenticated, and attacker-chosen parameters were unbounded (`iterations`/`memory`/`parallelism`/KDBX3 `TransformRounds` could freeze the importer for hours or OOM it) → caps enforced before execution: Argon2 ≤ 2 GiB memory, ≤ 64 passes, ≤ 64 parallelism; AES-KDF ≤ 10M rounds. |
+| 6.2 | Low | KDBX import | Unbounded pre-authentication allocations (header TLV fields, VariantDictionary values, HMAC block stream total, XML entry count) → bounded (16 MiB / 1 MiB+1024 entries / 1 GiB / 100k). Decompression was already capped at 128 MiB. |
+| 6.3 | Low | KDBX import | The picked `.kdbx` was read into memory with no limit → 512 MiB bounded read in the UI. |
+| 6.4 | Medium | Source scanning | Symlinks/junctions planted inside a source folder were followed: a planted link could pull files from **outside** the source into the archive, or create traversal cycles (DoS) → reparse points are skipped during enumeration and again per file. |
+| 6.5 | Low | Size policy | No per-file size policy: a multi-gigabyte source file (or a link to one) would be hashed for hours and could exhaust the drive → 2 GiB per-document cap in the scanner and the single-file add path. |
+| 6.6 | Medium | Deployment | `setup-drive.ps1` re-deploys nested the Linux payload one level deeper each time, and the copied `START-LINUX` launcher pointed at the build machine's artifacts layout (broken on the stick) → payload copied as contents; launcher generated for the drive layout. |
+| 6.7 | Low | Estate letter | Letter saves did not update the archive manifest → VERIFY ARCHIVE reported the letter as an "unexpected" file; manifest is now kept in sync. |
+
+Adversarial tests added: `KdbxHardeningTests` (fast-rejection of hostile KDF
+parameters and oversized structures), `VaultPathHardeningTests` (traversal
+rejection and plaintext-never-on-disk, re-verified), `SourceScannerHardeningTests`
+(real symlink and sparse-oversized-file scenarios in the Linux container).
 
 ---
 

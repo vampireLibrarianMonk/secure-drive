@@ -31,6 +31,7 @@ public sealed partial class SetupViewModel
 
         SourceConfiguration configuration = CurrentSources().WithSource(new SourceDirectory(Path.GetFullPath(path)));
         SourceConfigStore.Save(session, configuration);
+        ReloadSources();
         RefreshDashboard();
         RecordActivity("Sources", $"Source added: {configuration.Sources.Last().EffectiveAlias} ({Path.GetFullPath(path)}).");
         SetupStatus = $"Source added: {configuration.Sources.Last().EffectiveAlias}. Run UPDATE ARCHIVE to import its documents.";
@@ -48,6 +49,7 @@ public sealed partial class SetupViewModel
         SourceConfiguration configuration = CurrentSources().WithoutSource(removedAlias);
         SourceConfigStore.Save(session, configuration);
         SelectedSource = null;
+        ReloadSources();
         RefreshDashboard();
         RecordActivity("Sources", $"Source removed: {removedAlias}.");
         SetupStatus = "Source removed. Run UPDATE ARCHIVE to apply (deleted source files will be removed from the archive).";

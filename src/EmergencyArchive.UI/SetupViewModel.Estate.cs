@@ -144,7 +144,26 @@ public sealed partial class SetupViewModel
             await Task.Run(() =>
             {
                 // Save the edited letter verbatim into the vault (create or overwrite).
-                session.WriteFile(EstateLetterPath, Encoding.UTF8.GetBytes(letter));
+                byte[] letterBytes = Encoding.UTF8.GetBytes(letter);
+                session.WriteFile(EstateLetterPath, letterBytes);
+
+                // Keep the manifest in sync so the dashboard count and VERIFY
+                // ARCHIVE stay accurate — otherwise the letter would be
+                // reported as an unexpected file at the next verification.
+                ArchiveManifest manifest = ManifestStore.Load(session)
+                    ?? ArchiveManifest.Empty(session.VaultId, "not committed");
+                var entries = manifest.Entries
+                    .Where(e => !string.Equals(e.RelativePath, EstateLetterPath, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+                entries.Add(new ManifestEntry(
+                    EstateLetterPath,
+                    letterBytes.Length,
+                    DateTimeOffset.UtcNow,
+                    Sha256.ComputeHash(new MemoryStream(letterBytes)))
+                {
+                    Source = ManifestSource.Manual,
+                });
+                ManifestStore.Save(session, manifest with { Entries = entries });
 
                 // Keep it searchable: index this one document incrementally.
                 IndexEstateLetter();

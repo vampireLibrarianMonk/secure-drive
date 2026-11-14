@@ -10,6 +10,18 @@ namespace EmergencyArchive.Crypto.Kdbx;
 /// </summary>
 internal static class KdbxKeyDerivation
 {
+    // Caps on attacker-chosen KDF parameters (red/blue cycle, 2026-11): the KDF
+    // runs BEFORE the file is authenticated (the header HMAC is verified only
+    // afterwards), so a hostile .kdbx could otherwise make the importer spend
+    // unbounded CPU and memory — hours of Argon2, gigabytes of RAM, or 2^64
+    // AES-KDF rounds — from a file the user merely picked for import. KeePass
+    // defaults sit far below these ceilings (Argon2 ≈ 64 MiB / 2 passes,
+    // AES-KDF ≈ 600k rounds); legitimate databases are unaffected.
+    public const long MaxArgon2MemoryKib = 2 * 1024 * 1024;   // 2 GiB
+    public const int MaxArgon2Iterations = 64;                 // passes
+    public const int MaxArgon2Parallelism = 64;
+    public const ulong MaxAesKdfRounds = 10_000_000;
+
     /// <summary>
     /// Composite key = SHA-256( SHA-256(UTF-8 password) ). Password-only: no
     /// key file is combined (key-file support is a deliberate future step).
@@ -33,7 +45,8 @@ internal static class KdbxKeyDerivation
 
     /// <summary>
     /// Runs the KDBX4 KDF selected by the VariantDictionary's $UUID (Argon2d,
-    /// Argon2id, or AES-KDF) and returns the 32-byte transformed key.
+    /// Argon2id, or AES-KDF) and returns the 32-byte transformed key. The
+    /// parameters come from the unauthenticated header and are capped first.
     /// </summary>
     public static byte[] TransformKeyKdbx4(byte[] compositeKey, VariantDictionary kdf)
     {
@@ -59,7 +72,25 @@ internal static class KdbxKeyDerivation
 
             // KDBX stores memory in bytes; Argon2 takes KiB.
             long memoryKib = (long)(memoryBytes / 1024);
-            return KdbxCrypto.Argon2(type, compositeKey, salt, (int)iterations, memoryKib, (int)parallelism, 32);
+            if (memoryKib is < 1024 or > MaxArgon2MemoryKib)
+            {
+                throw new KdbxFormatException(
+                    $"KDBX KDF memory parameter is out of range ({memoryKib:N0} KiB; the ceiling is {MaxArgon2MemoryKib:N0} KiB). The file may be hostile.");
+            }
+
+            if (iterations is 0 or > (ulong)MaxArgon2Iterations)
+            {
+                throw new KdbxFormatException(
+                    $"KDBX KDF iteration count is out of range ({iterations}; the ceiling is {MaxArgon2Iterations}). The file may be hostile.");
+            }
+
+            if (parallelism is 0 or > MaxArgon2Parallelism)
+            {
+                throw new KdbxFormatException(
+                    $"KDBX KDF parallelism is out of range ({parallelism}; the ceiling is {MaxArgon2Parallelism}). The file may be hostile.");
+            }
+
+            return KdbxCrypto.Argon2(type, compositeKey, salt, (int)iterations, (int)memoryKib, (int)parallelism, 32);
         }
 
         if (KdbxFormat.UuidEquals(uuid, KdbxFormat.KdfAes))
@@ -70,15 +101,32 @@ internal static class KdbxKeyDerivation
                 throw new KdbxFormatException("KDBX4 AES-KDF parameters are incomplete.");
             }
 
+            RequireSaneAesKdfRounds(rounds);
             return KdbxCrypto.AesKdfTransform(compositeKey, seed, rounds);
         }
 
         throw new KdbxFormatException("Unsupported KDBX4 KDF (only Argon2d, Argon2id, and AES-KDF are supported).");
     }
 
-    /// <summary>KDBX3.1 AES-KDF transform from the outer-header transform seed/rounds.</summary>
+    /// <summary>
+    /// KDBX3.1 AES-KDF transform from the outer-header transform seed/rounds.
+    /// The round count comes from the unauthenticated header and is capped.
+    /// </summary>
     public static byte[] TransformKeyKdbx3(byte[] compositeKey, byte[] transformSeed, ulong rounds)
-        => KdbxCrypto.AesKdfTransform(compositeKey, transformSeed, rounds);
+    {
+        RequireSaneAesKdfRounds(rounds);
+        return KdbxCrypto.AesKdfTransform(compositeKey, transformSeed, rounds);
+    }
+
+    private static void RequireSaneAesKdfRounds(ulong rounds)
+    {
+        if (rounds is 0 or > MaxAesKdfRounds)
+        {
+            throw new KdbxFormatException(
+                $"KDBX AES-KDF round count is out of range ({rounds}; the ceiling is {MaxAesKdfRounds}). The file may be hostile.");
+        }
+    }
+
 
     /// <summary>Master (content) key = SHA-256(masterSeed || transformedKey).</summary>
     public static byte[] MasterKey(byte[] masterSeed, byte[] transformedKey)

@@ -24,6 +24,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Argon2 conformance values, an independent RFC 7539 ChaCha20 cross-check).
 - KDBX codec (`KdbxCodec`) and credential mapper (`KdbxCredentialMapper`) with
   round-trip, unicode/emoji, wrong-password, tamper, and corrupt-file tests.
+- **CLEAR ALL for the password manager**: one confirmed action purges every
+  stored credential at once. Archived documents are untouched; the confirmation
+  dialog spells that out. Covered by headless UI tests.
+- **End-to-end scenario tests** (`tests/EmergencyArchive.UI.Tests/Scenario*`):
+  fresh-drive setup and first unlock (the real production KDF cost exercised
+  once), wrong-password cooldown, password rotation, the password-manager
+  journey (add → persist across lock cycles → KeePass round-trip → CLEAR ALL
+  that provably leaves documents untouched), document import (source folder +
+  single file), full-text search with snippets, export round-trip, two-step
+  delete, and the estate-planning letter (vault + `public\` companion +
+  HEALTHY verify).
+- **Playwright scaffold** (`tools/playwright` + `tools/ExportCredentialPage`):
+  browser scenarios for the credential HTML export page (masking, reveal,
+  search, and a hostile-name script-injection check). Deliberately outside
+  `dotnet test`/CI — see tools/playwright/README.md.
+
+### Fixed
+
+- **Estate letter saves update the archive manifest**: the letter was written
+  into the vault and indexed but never recorded in the manifest, so
+  VERIFY ARCHIVE reported it as an unexpected file instead of HEALTHY.
+- **Source list refresh**: adding or removing a source folder now updates the
+  visible source list immediately (it previously only appeared after leaving
+  and re-entering Setup).
+- **Drive re-deploys** (`setup-drive.ps1`): the Linux payload is now copied as
+  file contents into `app\linux-x64\` (re-deploying used to nest the previous
+  payload one level deeper each time), and the generated `START-LINUX` launcher
+  now points at the drive layout (`app\linux-x64\…`) instead of the build
+  machine's artifacts layout — `./START-LINUX` works on the stick now.
+- **KDBX import hardening** (red/blue round 6): attacker-chosen KDF parameters
+  are capped **before** they execute (the KDF runs before the file is
+  authenticated — Argon2 ≤ 2 GiB / 64 passes / 64 parallelism, AES-KDF ≤ 10M
+  rounds), every pre-authentication allocation is bounded (header fields,
+  VariantDictionary, HMAC block stream, decompression, XML entries), and the
+  picked file is read with a 512 MB bound. A hostile KeePass file now fails
+  fast with a clear message instead of hanging or crashing the importer.
+- **Source-scan hardening** (red/blue round 6): symlinks/junctions planted
+  inside a source folder are never followed (they could pull files from
+  outside the source into the archive or create traversal cycles), and single
+  files above the 2 GiB per-document cap are excluded from scanning and import.
+- **Password manager viewer layout**: the credential list is a proper
+  vertical-scroll-only region that fills the window, cards stretch to the
+  viewport width (no more right-edge clipping), and the list+editor pair sits
+  in a Grid so the editor is the DockPanel fill child.
+- **Password manager flow**: the list scrolls independently, long operations
+  show progress indicators, and Enter submits the add/edit forms.
 
 ## [0.4.0] - 2026-09-11
 

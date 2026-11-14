@@ -82,6 +82,10 @@ internal sealed class VariantDictionary
         }
 
         var dict = new VariantDictionary();
+        const int MaxEntries = 1024;      // KDF parameters need a handful of entries
+        const int MaxKeyBytes = 1024;     // keys are short identifiers
+        const int MaxValueBytes = 1024 * 1024; // seeds/salts are tiny
+        int entries = 0;
         while (true)
         {
             byte typeByte = reader.ReadByte();
@@ -90,9 +94,25 @@ internal sealed class VariantDictionary
                 break;
             }
 
+            if (++entries > MaxEntries)
+            {
+                throw new KdbxFormatException("KDBX VariantDictionary has too many entries (the file may be hostile).");
+            }
+
             int keyLen = reader.ReadInt32();
+            if (keyLen is < 0 or > MaxKeyBytes)
+            {
+                throw new KdbxFormatException("KDBX VariantDictionary key length is out of range.");
+            }
+
             string key = Encoding.UTF8.GetString(reader.ReadBytes(keyLen));
+
             int valueLen = reader.ReadInt32();
+            if (valueLen is < 0 or > MaxValueBytes)
+            {
+                throw new KdbxFormatException("KDBX VariantDictionary value length is out of range.");
+            }
+
             byte[] valueBytes = reader.ReadBytes(valueLen);
 
             object value = (EntryType)typeByte switch

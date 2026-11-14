@@ -25,9 +25,11 @@ Environment, build, SBOM pipeline, USB layout, the Cryptomator format 8 vault
 layer, full-text search (SQLite + FTS5 inside the encrypted vault), the
 archive update engine (source scanning, change detection, transactional
 updates, Verify Archive), Setup Mode administration, Linux x64
-self-contained deployment (Docker-validated), replica management, and the
+self-contained deployment (Docker-validated), replica management, the
+in-app password manager with KeePass (KDBX) import/export, and the
 hardening pass (secret scanning, dependency audit, hardening checklist) are
-in place — 157+ tests green on both Windows and Linux. Remaining manual
+in place — **309 tests green** on both Windows and Linux (verified in the
+pinned `mcr.microsoft.com/dotnet/sdk:10.0` container). Remaining manual
 items: Cryptomator interop drill and the pre-release checklist in
 [docs/HARDENING.md](docs/HARDENING.md). See [CHANGELOG.md](CHANGELOG.md).
 
@@ -66,7 +68,7 @@ documented, independently recoverable open-source format.
 ├── src/            EmergencyArchive.{UI,Core,Crypto,Search,Sync,Integrity}
 ├── tests/          matching xUnit test projects
 ├── docs/           architecture, threat model, crypto, recovery, build, user guide
-├── scripts/        setup-env.ps1, build-in-docker.ps1, test-ui.ps1, publish.ps1, new-usb.ps1, setup-drive.ps1, generate-sbom.ps1
+├── scripts/        setup-env.ps1, build-in-docker.ps1, test-linux.ps1, test-ui.ps1, publish.ps1, new-usb.ps1, setup-drive.ps1, assemble-release.ps1, generate-sbom.ps1, scan-secrets.ps1, install-hooks.ps1
 ├── sbom/           generated CycloneDX SBOM (per release)
 ├── EmergencyArchive.slnx   solution (new XML solution format, SDK 10 default)
 ├── global.json     pinned .NET SDK

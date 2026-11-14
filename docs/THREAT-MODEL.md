@@ -22,6 +22,16 @@ Status: living document. Baseline from spec §23–§25.
 - Casual unauthorized access and offline filesystem inspection: no plaintext
   document data or sensitive filenames outside the vault; the SQLite index
   lives inside the vault (spec §9).
+- **Hostile import files**: a malicious KeePass (`.kdbx`) file cannot make the
+  importer spend unbounded CPU or memory — the KDF runs *before* the file is
+  authenticated (that is exactly why it is an attack surface), so KDF
+  parameters, header fields, decompression, and entry counts are capped before
+  any of it executes, and the picked file is read with a bounded size.
+- **Planted links and giant files in source folders**: symlinks/junctions
+  inside a source directory are never followed (they could pull files from
+  outside the source into the archive or create traversal cycles), and single
+  files above the per-document size cap (2 GiB) are excluded from scanning and
+  import.
 - Accidental modification: Emergency Mode is read-only; updates are staged,
   verified, then committed (spec §14, §22).
 - File corruption and interrupted updates: SHA-256 manifest, transactional

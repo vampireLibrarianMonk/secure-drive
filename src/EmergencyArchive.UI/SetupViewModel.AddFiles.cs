@@ -90,6 +90,12 @@ public sealed partial class SetupViewModel
                 continue;
             }
 
+            if (new FileInfo(sourcePath).Length > SourceScanner.MaxScanFileBytes)
+            {
+                skipped++;
+                continue;
+            }
+
             byte[] content;
             try
             {

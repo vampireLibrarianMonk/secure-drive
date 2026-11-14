@@ -147,9 +147,33 @@ if ($SkipApp) {
     }
 
     if (Test-Path $linuxUi) {
-        Copy-Item $linuxUi (Join-Path $root 'app\linux-x64') -Recurse -Force
-        if (Test-Path $startLinux) { Copy-Item $startLinux (Join-Path $root 'START-LINUX') -Force }
-        Write-Host "  + $(Join-Path $root 'app\linux-x64')"
+        # Copy the payload CONTENTS into app\linux-x64 — copying the directory
+        # itself onto an existing destination would nest it one level too deep
+        # on re-deploys (the same layout assemble-release.ps1 produces).
+        $linuxDest = Join-Path $root 'app\linux-x64'
+        if (Test-Path $linuxDest) { Remove-Item $linuxDest -Recurse -Force }
+        New-Item -ItemType Directory -Force -Path $linuxDest | Out-Null
+        Copy-Item (Join-Path $linuxUi '*') $linuxDest -Recurse -Force
+
+        # START-LINUX launcher at the drive root. It must reference the DRIVE
+        # layout (app\linux-x64), not the artifacts layout publish.ps1 writes,
+        # and it makes the binary executable on first run (exFAT does not
+        # preserve the execute bit).
+        $launcherLines = @(
+            '#!/usr/bin/env bash',
+            '# Emergency Archive launcher (Linux).',
+            'set -e',
+            'DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"',
+            'chmod +x "$DIR/app/linux-x64/EmergencyArchive.UI" 2>/dev/null || true',
+            'exec "$DIR/app/linux-x64/EmergencyArchive.UI"'
+        )
+        [IO.File]::WriteAllText(
+            (Join-Path $root 'START-LINUX'),
+            ($launcherLines -join "`n") + "`n",
+            (New-Object System.Text.UTF8Encoding($false)))
+
+        Write-Host "  + $(Join-Path $root 'START-LINUX')"
+        Write-Host "  + $linuxDest"
     }
 }
 

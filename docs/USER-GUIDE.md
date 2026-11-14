@@ -22,7 +22,7 @@ Windows computer. No internet, no accounts, nothing installed on the computer.
 
 - Almost any USB stick of **8 GB or larger** works. A 32 GB stick is ideal.
 - The stick should be formatted as **exFAT** (this is the most common format and
-  works on both Windows and Mac). Most new sticks already are.
+  works on Windows, Linux, and macOS). Most new sticks already are.
 
 To check or set the format on Windows: open **This PC**, right-click the USB
 drive, choose **Format…**, set **File system** to **exFAT**, and click Start.
@@ -99,7 +99,7 @@ lives on the stick.
 After creating the archive, the app opens in **Setup**. (You can always get
 back here later by unlocking and clicking **SETUP**.)
 
-<!-- IMAGE: The Setup screen showing the numbered cards: 1 Estate Planning, 2 Your Documents, 3 Manage Documents, 4 Maintenance, 5 Security. -->
+<!-- IMAGE: The Setup screen showing the numbered cards: 1 Estate Planning, 2 Your Documents, 3 Manage Documents, 4 Maintenance, 5 Security, 6 Password Manager. -->
 ![The Setup screen with its numbered cards](../reference_images/setup-overview.png)
 
 ### 1. Write a letter for your family (Estate Planning)
@@ -148,6 +148,9 @@ This is all someone needs to know in an emergency:
 
 1. **Plug the stick** into a Windows computer — ideally one you trust.
 2. Open the stick and **double-click `START-WINDOWS.exe`**.
+   On a **Linux** computer instead: open a terminal in the stick's folder and
+   run `./START-LINUX` (if it is not executable yet, run `chmod +x START-LINUX`
+   first). Everything below works the same.
 3. **Type the password** and click **UNLOCK**.
 
    <!-- IMAGE: The password (unlock) screen with the single password box and UNLOCK button. -->
@@ -183,6 +186,34 @@ guessing passwords. Enter the password carefully and wait for the countdown.
   traces on that computer.
 - **Don't rename, move, or delete files on the stick** from File Explorer, and
   remove the stick only **after locking**.
+
+---
+
+## Part 7 — Bonus: the built-in password manager
+
+Setup also has a **6 · PASSWORD MANAGER** card. It keeps logins and other
+credentials **encrypted inside the archive**, protected by the same password as
+your documents — one unlock covers everything.
+
+Click **OPEN PASSWORD MANAGER** to:
+
+- **See your credentials** as cards, searchable by site or username. Secret
+  values are hidden until you tap that value's **reveal** control, and every
+  value has a **COPY** button so you never have to retype it.
+- **Add, edit, or delete** entries with the buttons on each card.
+- **IMPORT / EXPORT** a KeePass `.kdbx` file, so credentials can move to or
+  from KeePass, KeePassXC, and other KeePass-compatible apps. The import and
+  export ask for the **KeePass file's own password**, which can be different
+  from your archive password.
+- **CLEAR ALL** — removes every stored credential in one step (it asks first).
+  Your archived **documents are not affected**. There is no undo.
+
+Close the password manager to return to Setup. Everything it stores lives
+inside the encrypted vault — nothing is written in the clear on the stick, and
+the activity log records that an action happened, never a secret value.
+
+<!-- IMAGE: The password manager viewer: search box, credential cards with hidden values, reveal toggles, and COPY buttons. -->
+![The password manager](../reference_images/password-manager.png)
 
 ---
 

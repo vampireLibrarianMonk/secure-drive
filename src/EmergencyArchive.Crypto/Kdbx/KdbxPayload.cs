@@ -17,6 +17,9 @@ internal static class KdbxPayload
     /// <summary>Upper bound on decompressed payload (defensive; a KeePass DB is far smaller).</summary>
     private const int MaxDecompressedBytes = 128 * 1024 * 1024;
 
+    /// <summary>Upper bound on the total authenticated ciphertext (defense in depth).</summary>
+    private const long MaxBlockStreamBytes = 1024L * 1024 * 1024;
+
     /// <summary>
     /// Reads and authenticates the KDBX4 HMAC block stream that follows the
     /// header + header-HMAC. Each block is [hmac:32][length:int32][data]; the
@@ -27,6 +30,7 @@ internal static class KdbxPayload
     {
         using var output = new MemoryStream();
         ulong blockIndex = 0;
+        long total = 0;
         while (true)
         {
             byte[] storedHmac = reader.ReadBytes(32);
@@ -37,6 +41,13 @@ internal static class KdbxPayload
             }
 
             byte[] blockData = reader.ReadBytes(length);
+
+            total += length;
+            if (total > MaxBlockStreamBytes)
+            {
+                throw new KdbxFormatException("KDBX payload is unreasonably large.");
+            }
+
 
             byte[] blockKey = KdbxKeyDerivation.BlockHmacKey(blockIndex, hmacBaseKey);
             byte[] indexLe = new byte[8];
