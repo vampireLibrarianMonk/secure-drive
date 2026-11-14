@@ -22,13 +22,15 @@ public sealed partial class VaultSession : IDisposable
     private readonly string vaultRootPath;
     private readonly VaultKeys keys;
     private readonly VaultConfigFile.VaultConfiguration config;
+    private readonly FileStream? driveLock; // single-instance guard (see VaultStore.AcquireDriveLock)
     private bool disposed;
 
-    internal VaultSession(string vaultRootPath, VaultKeys keys, VaultConfigFile.VaultConfiguration config)
+    internal VaultSession(string vaultRootPath, VaultKeys keys, VaultConfigFile.VaultConfiguration config, FileStream? driveLock = null)
     {
         this.vaultRootPath = vaultRootPath;
         this.keys = keys;
         this.config = config;
+        this.driveLock = driveLock;
     }
 
     public string VaultId => config.VaultId;
@@ -45,6 +47,23 @@ public sealed partial class VaultSession : IDisposable
         disposed = true;
         keys.Dispose();
         writeGate.Dispose();
+
+        // Release the single-instance guard and remove the (empty) lock file.
+        // Only the holder deletes it: a fail-open (read-only media) session has
+        // no lock of its own and must not delete another instance's file.
+        if (driveLock is not null)
+        {
+            driveLock.Dispose();
+            try
+            {
+                File.Delete(Path.Combine(vaultRootPath, ".emergency-archive-lock"));
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                // Best effort: a leftover file does not block the next unlock —
+                // the guard is the exclusive open, not the file's existence.
+            }
+        }
     }
 
     private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(disposed, this);

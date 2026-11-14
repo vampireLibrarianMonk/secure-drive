@@ -35,12 +35,58 @@ public static class VaultStore
         try
         {
             VaultConfigFile.VaultConfiguration config = VaultConfigFile.LoadAndVerify(vaultRootPath, keys);
-            return new VaultSession(vaultRootPath, keys, config);
+            FileStream? driveLock = AcquireVaultLock(vaultRootPath);
+            if (driveLock is null)
+            {
+                return new VaultSession(vaultRootPath, keys, config);
+            }
+
+            try
+            {
+                return new VaultSession(vaultRootPath, keys, config, driveLock);
+            }
+            catch
+            {
+                driveLock.Dispose();
+                throw;
+            }
         }
         catch
         {
             keys.Dispose();
             throw;
+        }
+    }
+
+    /// <summary>
+    /// Single-instance guard (red/blue cycle 2026-11): holds an exclusive
+    /// FileShare.None handle on a lock file INSIDE the vault directory for the
+    /// lifetime of the session. A second application instance opening the same
+    /// archive fails with <see cref="VaultInUseException"/> instead of racing
+    /// the first one's manifest and index writes (which VERIFY would only
+    /// catch after the fact). The lock lives per-vault (not at the drive root,
+    /// where unrelated vaults — or parallel test vaults under a shared temp
+    /// directory — would collide). Cryptomator ignores unknown files in the
+    /// vault root; the interop drill confirms this. Returns null on read-only
+    /// media, where the guard cannot be created — and where concurrent access
+    /// is read-only anyway.
+    /// </summary>
+    private static FileStream? AcquireVaultLock(string vaultRootPath)
+    {
+        string lockPath = Path.Combine(vaultRootPath, ".emergency-archive-lock");
+        try
+        {
+            return new FileStream(lockPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+        }
+        catch (IOException e)
+        {
+            throw new VaultInUseException(
+                "This archive is already open on this computer. Close the other Emergency Archive window first.",
+                e);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return null;
         }
     }
 

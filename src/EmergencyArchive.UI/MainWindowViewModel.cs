@@ -192,6 +192,12 @@ public partial class MainWindowViewModel : ObservableObject
             StatusMessage = WrongPasswordMessage;
             await RunCooldownAsync(rateLimiter.RemainingDelay(DateTimeOffset.UtcNow));
         }
+        catch (VaultInUseException e)
+        {
+            // Single-instance guard: the archive is open in another window.
+            // The message is user-facing and contains no sensitive material.
+            StatusMessage = e.Message;
+        }
         catch (VaultException e)
         {
             // Corrupt, tampered, or unsupported vault: never reveal details to

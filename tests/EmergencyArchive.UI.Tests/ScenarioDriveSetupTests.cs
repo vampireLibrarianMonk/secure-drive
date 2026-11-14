@@ -185,6 +185,27 @@ public sealed class ScenarioDriveSetupTests : IDisposable
     }
 
     [Fact]
+    public async Task Unlock_WhenArchiveIsOpenElsewhere_ShowsTheGuardMessage()
+    {
+        ScenarioSupport.CreateCheapVault(vaultDir, ScenarioSupport.Password);
+        try
+        {
+            // Another instance holds the archive open (single-instance guard).
+            using VaultSession heldElsewhere = VaultStore.Unlock(vaultDir, ScenarioSupport.Password);
+
+            var vm = new MainWindowViewModel { Password = ScenarioSupport.Password };
+            await vm.UnlockCommand.ExecuteAsync(null);
+
+            Assert.False(vm.IsUnlocked);
+            Assert.Contains("already open", vm.StatusMessage, StringComparison.Ordinal);
+        }
+        finally
+        {
+            CleanupVault();
+        }
+    }
+
+    [Fact]
     public async Task Setup_ChangePassword_ThenOnlyTheNewPasswordUnlocks()
     {
         ScenarioSupport.CreateCheapVault(vaultDir, ScenarioSupport.Password);

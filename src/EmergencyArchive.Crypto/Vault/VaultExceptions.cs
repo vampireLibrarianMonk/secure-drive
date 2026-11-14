@@ -27,3 +27,14 @@ public sealed class VaultIntegrityException : VaultException
     public VaultIntegrityException(string message) : base(message) { }
     public VaultIntegrityException(string message, Exception innerException) : base(message, innerException) { }
 }
+
+/// <summary>
+/// The archive is already open in another application instance (single-instance
+/// guard, red/blue cycle 2026-11). Concurrent writers could interleave updates
+/// and only be caught by VERIFY after the fact, so the second open is refused.
+/// </summary>
+public sealed class VaultInUseException : VaultException
+{
+    public VaultInUseException(string message) : base(message) { }
+    public VaultInUseException(string message, Exception innerException) : base(message, innerException) { }
+}
