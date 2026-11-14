@@ -31,7 +31,7 @@ drive, choose **Format…**, set **File system** to **exFAT**, and click Start.
 Formatting **erases the stick**, so use an empty one or copy anything off first.
 
 <!-- IMAGE: Windows "Format" dialog for a USB drive with the File system dropdown set to exFAT. -->
-![Formatting a USB stick as exFAT on Windows](../reference_images/format-usb-exfat.png)
+*(Screenshot pending — see [reference_images/README.md](../reference_images/README.md) for the capture checklist.)*
 
 > Tip: note the **drive letter** Windows gives the stick (for example `D:` or
 > `E:`). You will use it in the next step.
@@ -46,7 +46,7 @@ Formatting **erases the stick**, so use an empty one or copy anything off first.
    - **Linux:** `EmergencyArchive-<version>-linux.zip`
 
 <!-- IMAGE: GitHub Releases page with the latest release's downloadable .zip assets (windows and linux) highlighted. -->
-![Downloading the latest release from GitHub](../reference_images/github-download-release.png)
+*(Screenshot pending — see [reference_images/README.md](../reference_images/README.md) for the capture checklist.)*
 
 > If you are not sure where the Releases page is, look on the project's main
 > page for a link that says **Releases** on the right-hand side. Nothing gets
@@ -74,7 +74,7 @@ lives on the stick.
 1. Open the USB stick in File Explorer and **double-click `START-WINDOWS.exe`**.
 
    <!-- IMAGE: Windows SmartScreen "Windows protected your PC" dialog, with the "More info" link and then the "Run anyway" button indicated. -->
-   ![Getting past the Windows "unknown publisher" warning](../reference_images/windows-smartscreen-run-anyway.png)
+   *(Screenshot pending — see [reference_images/README.md](../reference_images/README.md) for the capture checklist.)*
 
    > **If Windows shows a blue "Windows protected your PC" warning:** this is
    > normal for an app downloaded from the internet. Click **More info**, then

@@ -11,6 +11,10 @@ by a Markdown image reference pointing at a file in **this** folder.
 - To fill a spot, save your screenshot as a **PNG** with that exact name in this
   folder (for example `create-archive-screen.png`). No doc edits needed — the
   image simply shows up.
+- Spots whose screenshot is **not captured yet** show a short *"(Screenshot
+  pending …)"* note in the doc instead of an image. When you capture one of
+  those, **replace that note with the `![...](slug.png)` line** described by the
+  `<!-- IMAGE: ... -->` comment right above it — one-line edit.
 - Keep the names exactly as listed below (lowercase, hyphens, `.png`).
 
 ## Regenerating the app screenshots automatically
