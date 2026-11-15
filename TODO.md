@@ -114,6 +114,25 @@ provenance notes in the release; the options below build on that.
   the check, so this is a visible layer **on top of** Option 1, never a
   replacement. No third party involved; reuses the existing assemble
   pipeline.
+- **Veracity boundary (analyzed 2026-11-14): embedded hashes alone prove
+  integrity, not authenticity.** A program cannot meaningfully verify itself
+  against a hash embedded in itself — whoever modifies the code also updates
+  the embedded hash. Verifying the payload files (`app/`) against a manifest
+  embedded in the launcher is stronger (catches payload swaps and accidental
+  corruption), and *signing* the manifest raises the bar to "attacker needs
+  our private key" — but an attacker with write access to the stick can swap
+  the launcher's embedded public key too. The rule: **an on-load check is
+  only as trustworthy as the trust anchor it uses, and anything stored on the
+  stick can be replaced together with the app.** Real anchors live elsewhere:
+  (a) the user at download time, comparing the published SHA256 on the HTTPS
+  GitHub release page / `gh attestation verify` — this is the version of a
+  "published hash check" that has full veracity; (b) the OS verifying an
+  Authenticode signature (Option 3); (c) GitHub's transparency log
+  (Option 1). A launcher that *fetches* the published SHA256SUMS over HTTPS
+  at load is genuinely meaningful while online (a tampered stick cannot forge
+  github.com's TLS), but in this app it must be advisory-only — the stick is
+  for offline emergencies, and offline you cannot distinguish "GitHub
+  unreachable" from "deliberately blocked".
 
 ### Option 3 — Code signing (DECIDED: declined for now, 2026-11-14)
 
