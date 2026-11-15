@@ -91,10 +91,13 @@ provenance notes in the release; the options below build on that.
 
 ### Option 1 — GitHub artifact attestations (free; recommended first step)
 
-- [ ] Add `actions/attest-build-provenance@v2` to `.github/workflows/release.yml`
-      for the two `.zip` assets and `SHA256SUMS.txt`.
-- [ ] Document verification in the README + release notes:
+- [x] Add `actions/attest-build-provenance` to `.github/workflows/release.yml`
+      for the two `.zip` assets. *(landed as `@v1` in the round-6 supply-chain
+      work, with `id-token: write` + `attestations: write` permissions)*
+- [x] Document verification in the README + release notes:
       `gh attestation verify EmergencyArchive-<ver>-windows.zip -R vampireLibrarianMonk/secure-drive`
+      *(README "Verify your download" section added in the v0.5.0 release
+      commit; `docs/HARDENING.md` already listed it)*
 - Sigstore-based; binds each artifact to the exact workflow run + source
   commit of this repo. Free for public repos. This is the strongest
   machine-checkable "unadulterated" proof — unlike a checksum, a trojaned

@@ -85,8 +85,11 @@ Being direct about the limits is part of the security posture (see also
   you **OPEN** a document. Opening also leaves normal host traces
   (recent-files, thumbnails). Prefer a computer you trust; the app warns on OPEN.
 - **Windows executables are unsigned.** Users will see a SmartScreen
-  "unknown publisher" warning; a signing certificate is required to remove it.
-  Downloaded binaries currently carry no build-provenance attestation.
+  "unknown publisher" warning; a signing certificate is required to remove it
+  (declined for now for a two-user app — see `TODO.md`, "Release trust /
+  anti-tamper options"). The *download* is verifiable though: every release
+  publishes `SHA256SUMS.txt` and a build-provenance attestation for each
+  package (`gh attestation verify <file> -R <owner>/<repo>`).
 - **Tamper detection is after the fact.** The app detects a corrupted/tampered
   vault (authentication fails; VERIFY reports it) but cannot prevent someone
   with drive access from destroying or replacing data. Keep multiple replicas.
@@ -99,7 +102,9 @@ Being direct about the limits is part of the security posture (see also
 ## Recommended next steps (not yet done)
 
 - Code-sign the Windows build (removes SmartScreen; a signing step is stubbed in
-  `release.yml`).
-- Add build-provenance attestation to releases so downloads are verifiable.
+  `release.yml`). Decision (2026-11-14): declined for now — see `TODO.md`.
+- ~~Add build-provenance attestation to releases so downloads are verifiable.~~
+  **Done** (round 6 follow-up): releases publish `SHA256SUMS.txt` and a
+  Sigstore build-provenance attestation per package.
 - Commission an independent third-party security audit before promoting to a
   `1.0.0` "rely on this" release.

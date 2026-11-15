@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-15
+
+KeePass interop for the password manager — import from and export to real
+KDBX files (KDBX 3.1/4.x read, KDBX 4 write), self-implemented and MIT-clean —
+plus a red/blue hardening round over the new KDBX surface, the
+single-instance guard, release supply-chain provenance (SHA256SUMS + a
+build-provenance attestation on every package), and the full documentation
+screenshot set. Full suite: 315 tests, 0 failures.
+
 ### Added
 
 - **KeePass (KDBX) import and export** for the password manager, self-implemented
